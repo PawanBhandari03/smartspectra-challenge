@@ -13,6 +13,19 @@ const CAPTURE = { width: 1280, height: 720, fps: 30 };
 
 let win = null;
 let sdk = null;
+let cameraId = null;
+
+function cameraSelection() {
+  return cameraId ? CameraSelection.byId(cameraId) : CameraSelection.default;
+}
+
+function listCameras() {
+  try {
+    return SmartSpectraSDK.availableCameras();
+  } catch {
+    return [];
+  }
+}
 
 // ---------- SDK (runs here, capturing the camera natively: no per-frame copies to the window) ----------
 
@@ -26,7 +39,7 @@ function ensureSdk() {
   for (const name of ['metrics', 'validationStatus', 'processingStatus', 'error', 'frameSentThrough']) {
     sdk.on(name, (...args) => sendEvent(name, ...args));
   }
-  sdk.useCamera(CameraSelection.default, CAPTURE);
+  sdk.useCamera(cameraSelection(), CAPTURE);
   return sdk;
 }
 
@@ -66,10 +79,17 @@ ipcMain.handle('sdk:readiness', async () => {
   }
 });
 
-ipcMain.handle('sdk:info', () => {
-  let cameras = [];
-  try { cameras = SmartSpectraSDK.availableCameras(); } catch { /* discovery unsupported */ }
-  return { version: SmartSpectraSDK.version, hasKey: !!apiKey, cameras, capture: CAPTURE };
+ipcMain.handle('sdk:info', () => ({
+  version: SmartSpectraSDK.version, hasKey: !!apiKey, cameras: listCameras(), cameraId, capture: CAPTURE,
+}));
+
+ipcMain.handle('sdk:cameras', () => listCameras());
+
+// Camera IDs are only valid until devices change, so the list is re-read before each selection.
+ipcMain.handle('sdk:setCamera', (_e, id) => {
+  cameraId = id && listCameras().some((c) => c.id === id) ? id : null;
+  if (sdk) sdk.useCamera(cameraSelection(), CAPTURE);
+  return cameraId;
 });
 
 // ---------- Recordings ----------

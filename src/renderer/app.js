@@ -10,6 +10,7 @@ const nameOf = (table, value) => Object.keys(table).find((k) => table[k] === val
 const $ = (id) => document.getElementById(id);
 const ui = {
   preview: $('preview'), placeholder: $('videoPlaceholder'), modeChip: $('modeChip'),
+  cameraSelect: $('cameraSelect'), refreshCameras: $('refreshCameras'),
   openCam: $('openCam'), closeCam: $('closeCam'), camInfo: $('camInfo'), camFps: $('camFps'),
   exposureRow: $('exposureRow'), exposureMode: $('exposureMode'), exposureTime: $('exposureTime'), exposureValue: $('exposureValue'),
   duration: $('duration'), startLive: $('startLive'), stopRun: $('stopRun'), checkDevice: $('checkDevice'),
@@ -48,6 +49,7 @@ function setMode(mode) {
   ui.stopRun.disabled = !busy;
   ui.closeCam.disabled = busy || !stream;
   ui.openCam.disabled = busy || !!stream;
+  ui.cameraSelect.disabled = busy;
 }
 
 // ---------- Camera check (browser camera, no credits) ----------
@@ -100,10 +102,63 @@ async function applyExposure() {
   }
 }
 
+// The SDK and the browser number cameras differently, so the preview finds the same camera by name.
+async function browserDeviceIdFor(sdkCameraName) {
+  if (!sdkCameraName) return null;
+  let devices = await navigator.mediaDevices.enumerateDevices();
+  if (devices.every((d) => !d.label)) {
+    const tmp = await navigator.mediaDevices.getUserMedia({ video: true });
+    tmp.getTracks().forEach((t) => t.stop());
+    devices = await navigator.mediaDevices.enumerateDevices();
+  }
+  const want = sdkCameraName.toLowerCase();
+  const match = devices.find((d) => d.kind === 'videoinput'
+    && (d.label.toLowerCase().includes(want) || want.includes(d.label.toLowerCase().replace(/\s*\([0-9a-f:]+\)$/, ''))));
+  return match ? match.deviceId : null;
+}
+
+async function refreshCameras() {
+  const cams = await bridge.cameras();
+  const current = ui.cameraSelect.value;
+  ui.cameraSelect.innerHTML = '';
+  const def = document.createElement('option');
+  def.value = '';
+  def.textContent = 'Default camera';
+  ui.cameraSelect.appendChild(def);
+  for (const c of cams) {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name || c.id;
+    ui.cameraSelect.appendChild(opt);
+  }
+  ui.cameraSelect.value = cams.some((c) => c.id === current) ? current : '';
+  log(`Cameras found: ${cams.map((c) => c.name || c.id).join(', ') || 'none'}`);
+}
+
+async function selectCamera() {
+  const chosen = await bridge.setCamera(ui.cameraSelect.value || null);
+  if (ui.cameraSelect.value && !chosen) {
+    log('That camera disappeared. Refreshing the list.');
+    await refreshCameras();
+    return;
+  }
+  log(`Camera for measurement: ${ui.cameraSelect.selectedOptions[0].textContent}`);
+  if (stream) {
+    await closeCamera();
+    await openCamera();
+  }
+}
+
 async function openCamera() {
+  const sdkName = ui.cameraSelect.value ? ui.cameraSelect.selectedOptions[0].textContent : null;
+  const deviceId = await browserDeviceIdFor(sdkName);
+  if (sdkName && !deviceId) log(`Preview couldn't find "${sdkName}" by name; showing the default camera instead.`);
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: 'user' },
+      video: {
+        width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 },
+        ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'user' }),
+      },
       audio: false,
     });
   } catch (err) {
@@ -329,6 +384,8 @@ async function refreshRecordings(select) {
 
 // ---------- Wire up ----------
 
+ui.cameraSelect.onchange = selectCamera;
+ui.refreshCameras.onclick = refreshCameras;
 ui.openCam.onclick = openCamera;
 ui.closeCam.onclick = closeCamera;
 ui.exposureMode.onchange = applyExposure;
@@ -343,8 +400,8 @@ ui.refreshRecordings.onclick = () => refreshRecordings();
   info = await bridge.info();
   ui.keyWarning.classList.toggle('hidden', info.hasKey);
   await refreshRecordings();
-  const cams = info.cameras.map((c) => c.name || c.id).join(', ') || 'none found';
-  log(`Ready. SDK ${info.version}. API key ${info.hasKey ? 'loaded' : 'MISSING'}. SDK cameras: ${cams}.`);
+  log(`Ready. SDK ${info.version}. API key ${info.hasKey ? 'loaded' : 'MISSING'}.`);
+  await refreshCameras();
   const auto = await window.gutCheck.getAutoReplay();
   if (auto) {
     ui.recordings.value = auto;

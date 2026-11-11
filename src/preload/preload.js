@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('gutCheck', {
   sdk: {
     info: () => ipcRenderer.invoke('sdk:info'),
+    cameras: () => ipcRenderer.invoke('sdk:cameras'),
+    setCamera: (id) => ipcRenderer.invoke('sdk:setCamera', id),
     start: () => ipcRenderer.invoke('sdk:start'),
     stop: () => ipcRenderer.invoke('sdk:stop'),
     destroy: () => ipcRenderer.invoke('sdk:destroy'),
