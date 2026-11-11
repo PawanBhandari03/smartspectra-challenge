@@ -23,8 +23,9 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Session recorder: every SDK event saved to `recordings/*.jsonl`
 - [x] 💳 👤 First live test: key works, expressions + blinks arrive; frame rate too low (10/s) → SDK stopped
 - [x] Fix: SDK captures the camera natively in the main process (no frame copying)
-- [ ] 💳 👤 Second live test (90 s): good front lighting, confirm pulse, breathing and HRV arrive
-- [ ] 💳 👤 Record 2–3 sample sessions (~3–5 min each, incl. imagining options)
+- [x] Camera picker (phone camera via Windows Phone Link works: steady 30 fps)
+- [x] 💳 👤 Second live test (90 s): all signals arrive; HRV only after ~60 s (→ whole-session bonus, not per option)
+- [ ] 💳 👤 Record 2–3 real Gut Check sessions — **moved to after Phase 2**, so the recordings include the real phase timings (saves credits)
 
 ## Phase 2 — Replay mode + full flow (Nov 13–15)
 - [x] Replay mode: play a recorded session as if live (0 credits) — built early in Phase 1
@@ -80,4 +81,5 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 | Date | Used for | Credits | Left |
 |---|---|---|---|
 | — | start | 0 | 100 |
-| Nov 11 | First live test (18 s, stopped by low frame rate) | ~1 | ~99 (confirm on dashboard) |
+| Nov 11 | First live test (18 s, stopped by low frame rate) | ~1 | ~99 |
+| Nov 11 | Second live test (90 s, phone camera, success) | ~3 | ~96 (confirm on dashboard) |

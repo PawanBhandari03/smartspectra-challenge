@@ -211,7 +211,7 @@ function renderVitals() {
   setQ(ui.vBreathQ, breathing);
   ui.vHrv.textContent = hrv?.rmssd != null ? Math.round(hrv.rmssd) : '—';
   setQ(ui.vHrvQ, hrv);
-  ui.vStress.textContent = hrv?.baevsky != null ? Math.round(hrv.baevsky) : '—';
+  ui.vStress.textContent = hrv?.baevsky != null ? hrv.baevsky.toFixed(2) : '—';
   // Expression scores arrive as percentages (they sum to ~100).
   ui.vExpr.textContent = expression?.top ? `${expression.top} ${Math.round(expression.topScore)}%` : '—';
   ui.vExprQ.textContent = expression ? (expression.stable ? 'stable' : 'warming up') : '';
@@ -356,7 +356,7 @@ function finishRun() {
   if (!source) return;
   const { pulse, breathing, hrv, expression } = tracker;
   log(`Summary: packets ${tracker.packets} · pulse ${pulse?.value?.toFixed(1) ?? 'none'} · breathing ${breathing?.value?.toFixed(1) ?? 'none'}`
-    + ` · HRV ${hrv?.rmssd != null ? Math.round(hrv.rmssd) + ' ms' : 'none'} · stress ${hrv?.baevsky != null ? Math.round(hrv.baevsky) : 'none'}`
+    + ` · HRV ${hrv?.rmssd != null ? Math.round(hrv.rmssd) + ' ms' : 'none'} · stress ${hrv?.baevsky != null ? hrv.baevsky.toFixed(2) : 'none'}`
     + ` · expression ${expression?.top ?? 'none'} · blinks ${tracker.blinkCount}`);
   clearInterval(clockTimer);
   source = null;

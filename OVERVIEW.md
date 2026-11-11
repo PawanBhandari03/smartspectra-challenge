@@ -164,3 +164,18 @@ smartspectra-challenge/
 | 2026-11-11 | Researched the SDK and other entries; locked the idea (Gut Check) and tech (Electron); wrote OVERVIEW + ROADMAP; created the project skeleton |
 | 2026-11-11 | Installed Electron 45, SDK 3.5, dotenv, esbuild. Built the **Signal Lab** test screen: camera preview + free fps check, live test with hard auto-stop, live vitals panel, automatic recording, and replay mode. Verified decoding with fake packets and that the app launches. No credits used yet. |
 | 2026-11-11 | **First live test** (~1 credit): API key works; expressions, blinks and breathing waveform arrive. But only 10 frames/s reached the SDK (camera gave 20 in dim light), so it stopped after ~10 s. Moved the SDK camera into the main process, added a device check, a manual-exposure experiment, and an fps warning before starting. Fixed expression % display (scores are already percentages). |
+| 2026-11-11 | Added a camera picker. **Second live test** with the phone camera (Samsung S21 Ultra via Windows Phone Link), 90 s, ~3 credits: **steady 30 fps, all signals arrived.** See "What real data taught us" below. |
+
+## What real data taught us (Nov 11 live test)
+
+| Signal | Behaviour | Design decision |
+|---|---|---|
+| Pulse | Stable after ~10 s, but swings ±10 bpm between readings | Average over each phase; only count stable readings |
+| Breathing | Stable after ~30 s, 14–18 /min | Use per phase, mostly the second half of each phase |
+| HRV + stress index | First value only at ~60 s, low confidence | **Not** part of the per-option vote; shown as a whole-session bonus |
+| Expressions | Neutral resting face read as "sad 85%" all session | Never use absolute values, only **change vs the user's own baseline** |
+| Blinks | ~12 /min (normal) | Usable per phase (blink rate change) |
+
+Confidence values from the SDK are on a 0–100 scale. The Baevsky stress index comes out small (~0.6), not in the textbook 50–150 range.
+
+**Camera:** the laptop webcam gave only ~20 fps in indoor light. A phone used as a webcam (Windows Phone Link) gives a steady 30 fps and is the recommended setup for testing and the demo. The app works with any camera.
