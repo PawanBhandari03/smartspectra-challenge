@@ -138,12 +138,41 @@
   <!-- 6. Results -->
   <section id="screen-results" class="screen">
     <div class="center wide">
-      <p class="eyebrow">Session complete</p>
-      <h2 id="resultsTitle">How your body reacted</h2>
+      <p class="eyebrow">Your Gut Check mirror</p>
+      <h2 id="resultsTitle"></h2>
       <p id="resultsNote" class="lead"></p>
-      <div id="resultsTable"></div>
-      <p id="resultsFiles" class="fine"></p>
+
+      <div id="optionSummary" class="option-summary"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Your pulse through the session</h3>
+          <div id="chartLegend" class="legend"></div>
+        </div>
+        <div id="timeline" class="timeline"></div>
+        <p class="fine">Hover the line to see what was on screen at that moment. Numbers mark the moments below.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Moments your body reacted</h3>
+          <ol id="momentsList" class="moments"></ol>
+        </div>
+        <div class="card">
+          <h3>Questions to sit with</h3>
+          <ul id="reflectList" class="reflect"></ul>
+        </div>
+      </div>
+
+      <details class="card details">
+        <summary>Details and method</summary>
+        <div id="resultsTable"></div>
+        <p id="method" class="fine"></p>
+        <p id="resultsFiles" class="fine"></p>
+      </details>
+
       <div class="actions">
+        <span></span>
         <button id="newSession" class="primary">New Gut Check</button>
       </div>
     </div>

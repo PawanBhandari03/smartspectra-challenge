@@ -1,7 +1,8 @@
 const { SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { buildPlan, plannedDurationMs, SessionRunner } = require('../core/session');
-const { analyzeSession } = require('../core/analysis');
+const { analyzeSession, pulseTrace, MIN_CONFIDENCE, MIN_ROUND_GAP_BPM, MOMENT } = require('../core/analysis');
+const { renderTimeline, OPTION_COLORS } = require('./timeline');
 const { REQUESTED_METRICS } = require('../core/metrics');
 
 const $ = (id) => document.getElementById(id);
@@ -470,10 +471,10 @@ function verdictText(v) {
       };
     case 'tooClose':
       return {
-        title: 'Too close to call',
+        title: 'Your body didn\'t pick a side',
         note: v.agree
           ? `Both rounds pointed the same way, but not by more than ${fmt(v.threshold, 1)} bpm each, which is within the normal minute-to-minute wobble of a resting pulse.`
-          : `The two rounds pointed in opposite directions (${fmt(v.round1, 1)} vs ${fmt(v.round2, 1)} bpm), so your body didn't clearly prefer either option.`,
+          : 'The two rounds pointed in opposite directions, so neither option clearly calmed or stirred you more. The moments below show where your body did react.',
       };
     case 'notEnough':
       return { title: 'Not enough clear signal', note: 'At least one visit had too few reliable pulse readings. Better light on your face and staying still usually fix this.' };
@@ -491,6 +492,19 @@ function renderResults(result, sessionName, recordingName) {
   const text = verdictText(a.verdict);
   $('resultsTitle').textContent = text.title;
   $('resultsNote').textContent = text.note;
+
+  renderOptionSummary(a);
+  renderMoments(a);
+  renderReflection(a, result.options);
+  renderLegend(result.options);
+  // Draw after the screen is visible so the chart can measure its width.
+  requestAnimationFrame(() => renderTimeline($('timeline'), result, pulseTrace(result), momentMarkers(a)));
+
+  $('method').textContent = 'How this works: Presage SmartSpectra reads your pulse from tiny colour changes in your face through the camera. '
+    + 'Each option is visited twice in a mirrored order (A B B A), so the slow drift of a body during a session affects both options equally. '
+    + `Only stable readings with confidence ${MIN_CONFIDENCE}+ count, skipping the first 15 s of each visit while the pulse average catches up. `
+    + `A resting pulse wobbles 6 to 9 bpm from minute to minute by itself, so Gut Check only names a calmer option when both rounds agree by more than ${MIN_ROUND_GAP_BPM} bpm. `
+    + 'A wellness reflection tool, not medical advice.';
 
   const table = document.createElement('table');
   table.className = 'results';
@@ -520,8 +534,118 @@ function renderResults(result, sessionName, recordingName) {
   $('resultsTable').innerHTML = '';
   $('resultsTable').appendChild(table);
 
-  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}The vote uses pulse only; blinks are shown for reference. `
+  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}`
     + `Saved: sessions/${sessionName}${recordingName ? ` · recordings/${recordingName}` : ''}`;
+}
+
+function swatch(color) {
+  const s = document.createElement('span');
+  s.className = 'swatch';
+  s.style.background = color;
+  return s;
+}
+
+function renderLegend(options) {
+  const legend = $('chartLegend');
+  legend.innerHTML = '';
+  options.forEach((o, i) => {
+    const item = document.createElement('span');
+    item.append(swatch(OPTION_COLORS[i]), document.createTextNode(o.label));
+    legend.appendChild(item);
+  });
+}
+
+function renderOptionSummary(a) {
+  const box = $('optionSummary');
+  box.innerHTML = '';
+  a.options.forEach((o, i) => {
+    const card = document.createElement('div');
+    card.className = `opt${a.verdict.kind === 'lean' && a.verdict.calmerIndex === i ? ' calmer' : ''}`;
+    const name = document.createElement('div');
+    name.className = 'name';
+    const label = document.createElement('span');
+    label.textContent = o.label;
+    name.append(swatch(OPTION_COLORS[i]), label);
+    if (a.verdict.kind === 'lean' && a.verdict.calmerIndex === i) {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = 'Calmer';
+      name.appendChild(tag);
+    }
+    const value = document.createElement('div');
+    value.className = 'value';
+    value.textContent = fmt(o.pulse);
+    const unit = document.createElement('small');
+    unit.textContent = 'bpm average';
+    value.appendChild(unit);
+    const sub = document.createElement('div');
+    sub.className = 'sub';
+    sub.textContent = `Visit 1: ${fmt(o.visitPulses[0])} · Visit 2: ${fmt(o.visitPulses[1])} bpm · ${fmt(o.blinksPerMin)} blinks/min`;
+    card.append(name, value, sub);
+    box.appendChild(card);
+  });
+}
+
+// Markers sit where the reaction shows in the pulse (a few seconds after the prompt appeared).
+function momentMarkers(a) {
+  const marks = a.moments.rises.map((m, i) => ({ t: m.startMs + MOMENT.reactionDelayMs + 5000, label: String(i + 1) }));
+  if (a.moments.calmest) marks.push({ t: a.moments.calmest.startMs + MOMENT.reactionDelayMs + 5000, label: 'C' });
+  return marks;
+}
+
+function momentItem(numText, numClass, what, prompt) {
+  const li = document.createElement('li');
+  const num = document.createElement('span');
+  num.className = `num ${numClass}`;
+  num.textContent = numText;
+  const body = document.createElement('div');
+  const w = document.createElement('span');
+  w.className = 'what';
+  w.textContent = what;
+  const q = document.createElement('span');
+  q.className = 'quote';
+  q.textContent = `“${prompt}”`;
+  body.append(w, q);
+  li.append(num, body);
+  return li;
+}
+
+function renderMoments(a) {
+  const list = $('momentsList');
+  list.innerHTML = '';
+  a.moments.rises.forEach((m, i) => {
+    list.appendChild(momentItem(String(i + 1), '', `Pulse rose ~${fmt(m.shift)} bpm · ${m.label}, visit ${m.visit}`, m.prompt));
+  });
+  if (a.moments.calmest) {
+    const m = a.moments.calmest;
+    list.appendChild(momentItem('C', 'calm', `Calmest moment: pulse eased ~${fmt(Math.abs(m.shift))} bpm · ${m.label}, visit ${m.visit}`, m.prompt));
+  }
+  if (!list.children.length) {
+    const li = document.createElement('li');
+    li.className = 'what';
+    li.textContent = 'No single moment stood out: your pulse stayed fairly even through the prompts.';
+    list.appendChild(li);
+  }
+}
+
+function renderReflection(a, options) {
+  const qs = [];
+  const top = a.moments.rises[0];
+  if (top) qs.push(`At "${top.prompt}" your pulse rose. What came up for you right then?`);
+  if (a.moments.calmest) qs.push(`Your body eased at "${a.moments.calmest.prompt}". What felt settled there?`);
+  if (a.verdict.kind === 'tooClose') {
+    qs.push('Your body didn\'t pick a side. When you read "too close to call", did you feel relief or disappointment? That feeling is information too.');
+  } else if (a.verdict.kind === 'lean') {
+    qs.push(`Your body was calmer with "${a.verdict.calmerLabel}". Does that match what you expected, or surprise you?`);
+  }
+  qs.push(`Which was easier to picture in detail: "${options[0].label}" or "${options[1].label}"?`);
+  const list = $('reflectList');
+  list.innerHTML = '';
+  for (const q of qs.slice(0, 4)) {
+    const li = document.createElement('li');
+    li.textContent = q;
+    list.appendChild(li);
+  }
 }
 
 $('newSession').onclick = () => {

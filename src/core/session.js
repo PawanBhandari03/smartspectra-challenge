@@ -132,7 +132,9 @@ class SessionRunner extends Emitter {
     if (this.phaseIndex >= 0) this.phaseTimes[this.phaseIndex].endMs = t;
     this.phaseIndex = index;
     const p = this.phase;
-    this.phaseTimes[index] = { kind: p.kind, optionIndex: p.optionIndex ?? null, visit: p.visit ?? null, startMs: t, endMs: null };
+    this.phaseTimes[index] = {
+      kind: p.kind, optionIndex: p.optionIndex ?? null, visit: p.visit ?? null, prompts: p.prompts, startMs: t, endMs: null,
+    };
     this.source.mark?.({ event: 'phase', kind: p.kind, optionIndex: p.optionIndex ?? null, visit: p.visit ?? null, index });
     this.emit('phase', p, index);
   }

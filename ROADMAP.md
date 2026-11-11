@@ -42,13 +42,15 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [ ] 💳 👤 **Null test:** a real session with two near-identical options (e.g. "tea" vs "coffee") → measures the noise floor for "too close to call"
 - [ ] 💳 👤 **Real decision test:** a session with a decision that matters to you
 
-## Phase 3 — Scoring + Body Vote (Nov 16–17)
-- [ ] Collect per-phase readings (only reliable / stable ones)
-- [ ] Compute changes vs baseline (pulse, breathing, HRV, expressions, blinks)
-- [ ] Calm ↔ tense score per option
-- [ ] Verdict: leaned toward X / too close to call / not enough signal
-- [ ] Result screen with Chart.js timeline + per-signal breakdown
-- [ ] Reflection questions based on what reacted
+## Phase 3 — Scoring + results ("a mirror, not a verdict") — done early (Nov 11)
+- [x] Control experiment (tea vs coffee) + real decision → single visits can't tell options apart (see OVERVIEW)
+- [x] Redesign: 2 options × 2 visits in mirrored order (A B B A), ~4 min, faster option-specific prompts
+- [x] Pulse-only comparison: median of stable, confident readings; quality check per visit
+- [x] Verdict calibrated on real data: names a calmer option only if both rounds agree by > max(wobble, 6 bpm); otherwise "Your body didn't pick a side"
+- [x] Decision with Pawan: **a mirror, not a verdict**
+- [x] Results screen: option cards, pulse timeline (hover shows the prompt on screen), "moments your body reacted", reflection questions, method + limits
+- [ ] 💳 👤 ABBA null test (tea vs coffee) → should say "didn't pick a side"
+- [ ] 💳 👤 ABBA real decision session
 
 ## Phase 4 — Polish (Nov 18–19)
 - [ ] Visual design (colours, fonts, animations)

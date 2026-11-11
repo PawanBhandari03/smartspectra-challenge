@@ -214,6 +214,15 @@ smartspectra-challenge/
 
 **Calibration on real data:** cutting the two sessions' pulse into fake A/B/B/A sessions (labels meaningless) showed one-minute blocks differing by **6–9 bpm by pure chance**. A rule of "both rounds agree and beat the visit-to-visit wobble" picked a fake winner ~87% of the time; requiring **each round to beat max(wobble, 6 bpm)** brought that to ~26%. That rule is used now, but 26% is still too high to call it a reliable vote (rough estimate: 2 sessions, overlapping windows).
 
+**Product decision (Nov 11): "a mirror, not a verdict".** The results screen shows *what your body did* rather than declaring a winner:
+- two option cards (average pulse, each visit, blinks); an option is tagged "Calmer" only when the strict rule above passes
+- a pulse timeline (6-second rolling median of reliable readings) with the four visits as coloured bands; hovering shows the prompt that was on screen
+- "Moments your body reacted": the prompts after which the pulse rose most (≥ 3 bpm vs the 10 s before), plus the calmest moment
+- reflection questions built from those moments ("did you feel relief or disappointment at 'didn't pick a side'?")
+- "Details and method": per-visit table, how it works and its limits
+
+The session was also shortened to ~4 minutes after real-use feedback (6 minutes hurt the back and overheated the phone): baseline 30 s, four 40 s visits, 10 s resets, a new prompt every 10 s, each prompt naming the option.
+
 ## What real data taught us (Nov 11 live test)
 
 | Signal | Behaviour | Design decision |

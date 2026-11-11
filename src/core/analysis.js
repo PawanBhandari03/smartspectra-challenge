@@ -68,6 +68,34 @@ function verdictFor(options, visits) {
   return { kind: 'lean', calmerIndex: calmer, calmerLabel: options[calmer].label, tenserLabel: options[1 - calmer].label, agree, ...numbers };
 }
 
+// "Moments": how the pulse moved around each prompt, relative to just before it. The SDK's pulse
+// is a ~12 s rolling average, so a reaction shows up a few seconds after the prompt appears.
+// Moments are reflection cues, not proof: single moments sit inside normal pulse wobble.
+const MOMENT = { reactionDelayMs: 5000, referenceMs: 10000, minReadings: 3, minShiftBpm: 3 };
+
+function momentsFor(session) {
+  const promptEvery = session.timing?.promptEveryMs;
+  if (!promptEvery) return [];
+  const out = [];
+  for (const phase of session.phases) {
+    if (phase.kind !== 'option' || phase.endMs == null || !phase.prompts) continue;
+    phase.prompts.forEach((prompt, i) => {
+      const start = phase.startMs + i * promptEvery;
+      if (start >= phase.endMs) return;
+      const end = Math.min(start + promptEvery, phase.endMs);
+      const during = reliable(session.series.pulse, start + MOMENT.reactionDelayMs, end + MOMENT.reactionDelayMs);
+      const before = reliable(session.series.pulse, start - MOMENT.referenceMs, start + 2000);
+      if (during.length < MOMENT.minReadings || before.length < MOMENT.minReadings) return;
+      out.push({
+        prompt, optionIndex: phase.optionIndex, visit: phase.visit, startMs: start,
+        label: session.options[phase.optionIndex].label,
+        shift: median(during) - median(before),
+      });
+    });
+  }
+  return out;
+}
+
 function analyzeSession(session) {
   const { series } = session;
   const blocks = session.phases.filter((p) => p.endMs != null && p.kind !== 'settle' && p.kind !== 'reset');
@@ -76,12 +104,35 @@ function analyzeSession(session) {
     .filter((p) => p.kind === 'option')
     .map((p) => ({ optionIndex: p.optionIndex, visit: p.visit, label: session.options[p.optionIndex].label, stats: blockStats(series, p) }));
 
+  const options = session.options.map((o, i) => {
+    const own = visits.filter((v) => v.optionIndex === i);
+    const pulses = own.map((v) => v.stats.pulse).filter((p) => p != null);
+    const blinks = own.map((v) => v.stats.blinksPerMin).filter((b) => b != null);
+    return {
+      label: o.label,
+      visitPulses: own.map((v) => v.stats.pulse),
+      pulse: pulses.length ? pulses.reduce((a, b) => a + b, 0) / pulses.length : null,
+      blinksPerMin: blinks.length ? blinks.reduce((a, b) => a + b, 0) / blinks.length : null,
+    };
+  });
+
+  const moments = momentsFor(session);
+  const rises = moments.filter((m) => m.shift >= MOMENT.minShiftBpm).sort((a, b) => b.shift - a.shift).slice(0, 3);
+  const calmest = moments.filter((m) => m.shift <= -MOMENT.minShiftBpm).sort((a, b) => a.shift - b.shift)[0] || null;
+
   return {
     baseline: baselineBlock ? blockStats(series, baselineBlock) : null,
     visits,
+    options,
+    moments: { rises, calmest, all: moments },
     verdict: session.version >= 2 ? verdictFor(session.options, visits) : { kind: 'incomplete' },
     completed: session.completed,
   };
 }
 
-module.exports = { analyzeSession, LAGS, MIN_CONFIDENCE, MIN_PULSE_READINGS, MIN_ROUND_GAP_BPM };
+// Reliable pulse readings for charting: [{ t, v }].
+function pulseTrace(session) {
+  return session.series.pulse.filter((p) => p.s && p.c >= MIN_CONFIDENCE).map((p) => ({ t: p.t, v: p.v }));
+}
+
+module.exports = { analyzeSession, pulseTrace, LAGS, MIN_CONFIDENCE, MIN_PULSE_READINGS, MIN_ROUND_GAP_BPM, MOMENT };
