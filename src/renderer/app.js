@@ -32,12 +32,18 @@ async function copyLog() {
     + ` · status ${ui.procStatus.textContent} · guidance ${ui.validation.textContent}`;
   try {
     await navigator.clipboard.writeText(`${lines.join('\n')}\n${snapshot}\n`);
-    ui.copyLog.textContent = 'Copied ✓';
   } catch (err) {
-    ui.copyLog.textContent = 'Copy failed';
-    console.log(`Copy failed: ${err.message}`);
+    log(`Copy failed: ${err.message}`);
+    return;
   }
-  setTimeout(() => { ui.copyLog.textContent = 'Copy log'; }, 1500);
+  $('copyIcon').classList.add('hidden');
+  $('copiedIcon').classList.remove('hidden');
+  ui.copyLog.classList.add('done');
+  setTimeout(() => {
+    $('copyIcon').classList.remove('hidden');
+    $('copiedIcon').classList.add('hidden');
+    ui.copyLog.classList.remove('done');
+  }, 1500);
 }
 
 const bridge = window.gutCheck.sdk;

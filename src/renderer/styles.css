@@ -53,6 +53,17 @@ main {
 .row.spread { justify-content: space-between; margin-bottom: 10px; }
 .row.spread h2 { margin: 0; }
 
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+.icon-btn.done { color: var(--ok); border-color: var(--ok); }
+
 button, select {
   background: #222734;
   color: var(--text);
