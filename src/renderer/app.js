@@ -349,12 +349,23 @@ async function startLive() {
   log(`Measuring with: ${cameraName}`);
   beginRun(src, 'live');
   ui.credits.textContent = '0';
+  // Count the auto-stop from when measuring actually begins; SDK startup takes several seconds.
   const seconds = Number(ui.duration.value);
+  const SAFETY_SECONDS = 30;
   autoStopTimer = setTimeout(() => {
-    log(`Auto-stop after ${seconds} s`);
+    log(`Auto-stop: measurement never started within ${SAFETY_SECONDS} s`);
     stopRun();
-  }, seconds * 1000);
-  log(`Live test started (auto-stop in ${seconds} s)`);
+  }, SAFETY_SECONDS * 1000);
+  src.on('processingStatus', (status) => {
+    if (status !== ProcessingStatus.kRunning || src !== source) return;
+    clearTimeout(autoStopTimer);
+    runStartedAt = performance.now();
+    autoStopTimer = setTimeout(() => {
+      log(`Auto-stop after ${seconds} s of measuring`);
+      stopRun();
+    }, seconds * 1000);
+  });
+  log(`Live test started (auto-stop ${seconds} s after measuring begins)`);
   try {
     await src.start();
   } catch (err) {
