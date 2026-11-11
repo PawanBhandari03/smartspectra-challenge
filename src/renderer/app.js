@@ -142,32 +142,53 @@ async function browserDeviceIdFor(sdkCameraName) {
   return match ? match.deviceId : null;
 }
 
+const CAMERA_PREF_KEY = 'gutcheck.cameraName';
+
+function savedCameraName() {
+  try { return localStorage.getItem(CAMERA_PREF_KEY); } catch { return null; }
+}
+
+// Preview and measurement must always use the same, explicitly named camera,
+// because "default" means different devices to the browser and to the SDK.
 async function refreshCameras() {
   const cams = await bridge.cameras();
-  const current = ui.cameraSelect.value;
+  const wanted = ui.cameraSelect.selectedOptions[0]?.textContent || savedCameraName();
   ui.cameraSelect.innerHTML = '';
-  const def = document.createElement('option');
-  def.value = '';
-  def.textContent = 'Default camera';
-  ui.cameraSelect.appendChild(def);
   for (const c of cams) {
     const opt = document.createElement('option');
     opt.value = c.id;
     opt.textContent = c.name || c.id;
     ui.cameraSelect.appendChild(opt);
   }
-  ui.cameraSelect.value = cams.some((c) => c.id === current) ? current : '';
+  if (!cams.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'No camera found';
+    ui.cameraSelect.appendChild(opt);
+  }
+  const match = cams.find((c) => (c.name || c.id) === wanted);
+  if (match) ui.cameraSelect.value = match.id;
   log(`Cameras found: ${cams.map((c) => c.name || c.id).join(', ') || 'none'}`);
+  await applyCameraChoice();
+}
+
+async function applyCameraChoice() {
+  const id = ui.cameraSelect.value;
+  if (!id) return false;
+  const chosen = await bridge.setCamera(id);
+  if (!chosen) return false;
+  const name = ui.cameraSelect.selectedOptions[0].textContent;
+  try { localStorage.setItem(CAMERA_PREF_KEY, name); } catch { /* storage unavailable */ }
+  log(`Camera for preview + measurement: ${name}`);
+  return true;
 }
 
 async function selectCamera() {
-  const chosen = await bridge.setCamera(ui.cameraSelect.value || null);
-  if (ui.cameraSelect.value && !chosen) {
+  if (!(await applyCameraChoice())) {
     log('That camera disappeared. Refreshing the list.');
     await refreshCameras();
     return;
   }
-  log(`Camera for measurement: ${ui.cameraSelect.selectedOptions[0].textContent}`);
   if (stream) {
     await closeCamera();
     await openCamera();
@@ -175,15 +196,15 @@ async function selectCamera() {
 }
 
 async function openCamera() {
-  const sdkName = ui.cameraSelect.value ? ui.cameraSelect.selectedOptions[0].textContent : null;
-  const deviceId = await browserDeviceIdFor(sdkName);
-  if (sdkName && !deviceId) log(`Preview couldn't find "${sdkName}" by name; showing the default camera instead.`);
+  const sdkName = ui.cameraSelect.selectedOptions[0]?.textContent;
+  const deviceId = ui.cameraSelect.value ? await browserDeviceIdFor(sdkName) : null;
+  if (!deviceId) {
+    log(`Preview couldn't find "${sdkName}". Pick a camera and try again.`);
+    return;
+  }
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 },
-        ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'user' }),
-      },
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, deviceId: { exact: deviceId } },
       audio: false,
     });
   } catch (err) {
@@ -306,6 +327,11 @@ async function startLive() {
       && !confirm(`The camera check shows ${measuredFps.toFixed(1)} fps (needs ${MIN_FPS}+). The SDK will likely stop early. Start anyway?`)) {
     return;
   }
+  if (!(await applyCameraChoice())) {
+    log('No camera selected for measurement. Pick one from the list.');
+    return;
+  }
+  const cameraName = ui.cameraSelect.selectedOptions[0].textContent;
   // The SDK opens the camera itself in the main process, so the preview must let go of it first.
   reopenPreviewAfterRun = !!stream;
   await closeCamera();
@@ -317,9 +343,10 @@ async function startLive() {
     mode: 'live',
     capture: 'native',
     requestedMetrics: REQUESTED_METRICS,
-    camera: info.capture,
+    camera: { ...info.capture, name: cameraName },
     previewFps: measuredFps || null,
   });
+  log(`Measuring with: ${cameraName}`);
   beginRun(src, 'live');
   ui.credits.textContent = '0';
   const seconds = Number(ui.duration.value);

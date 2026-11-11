@@ -118,7 +118,8 @@ ipcMain.handle('sdk:cameras', () => listCameras());
 
 // Camera IDs are only valid until devices change, so the list is re-read before each selection.
 ipcMain.handle('sdk:setCamera', (_e, id) => {
-  cameraId = id && listCameras().some((c) => c.id === id) ? id : null;
+  if (!id || !listCameras().some((c) => c.id === id)) return null;
+  cameraId = id;
   if (sdk) sdk.useCamera(cameraSelection(), CAPTURE);
   return cameraId;
 });
