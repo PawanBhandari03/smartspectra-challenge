@@ -7,7 +7,6 @@ const { REQUESTED_METRICS } = require('../core/metrics');
 const $ = (id) => document.getElementById(id);
 const bridge = window.gutCheck.sdk;
 
-const MAX_OPTIONS = 3;
 const CAMERA_PREF_KEY = 'gutcheck.cameraName';
 
 // Friendly versions of the SDK's ValidationCode guidance.
@@ -29,7 +28,7 @@ const GUIDANCE = {
   17: 'Look straight at the screen.',
 };
 
-const PHASE_NAMES = { settle: 'Getting ready', baseline: 'Calm baseline', reset: 'Reset', endBaseline: 'Calm baseline' };
+const PHASE_NAMES = { settle: 'Getting ready', baseline: 'Calm baseline', reset: 'Reset' };
 
 const state = {
   options: [{ label: '', detail: '' }, { label: '', detail: '' }],
@@ -66,19 +65,12 @@ function renderOptions() {
     const title = document.createElement('span');
     title.textContent = `Option ${i + 1}`;
     head.appendChild(title);
-    if (state.options.length > 2) {
-      const remove = document.createElement('button');
-      remove.className = 'remove';
-      remove.textContent = 'Remove';
-      remove.onclick = () => { state.options.splice(i, 1); renderOptions(); };
-      head.appendChild(remove);
-    }
 
     const label = document.createElement('input');
     label.type = 'text';
     label.className = 'label';
     label.maxLength = 60;
-    label.placeholder = i === 0 ? 'e.g. Stay in my city' : i === 1 ? 'e.g. Move to Bangalore for the new job' : 'e.g. Take a gap year';
+    label.placeholder = i === 0 ? 'e.g. Stay in my city' : 'e.g. Move to Bangalore for the new job';
     label.value = opt.label;
     label.oninput = () => { opt.label = label.value; };
 
@@ -92,13 +84,7 @@ function renderOptions() {
     card.append(head, label, detail);
     list.appendChild(card);
   });
-  $('addOption').classList.toggle('hidden', state.options.length >= MAX_OPTIONS);
 }
-
-$('addOption').onclick = () => {
-  if (state.options.length < MAX_OPTIONS) state.options.push({ label: '', detail: '' });
-  renderOptions();
-};
 
 $('welcomeNext').onclick = () => { renderOptions(); go('options'); };
 
@@ -106,7 +92,7 @@ $('optionsNext').onclick = () => {
   const cleaned = state.options.map((o) => ({ label: o.label.trim(), detail: o.detail.trim() }));
   const labels = cleaned.map((o) => o.label.toLowerCase());
   let error = '';
-  if (cleaned.some((o) => !o.label)) error = 'Give every option a name (or remove the empty one).';
+  if (cleaned.some((o) => !o.label)) error = 'Give both options a name.';
   else if (new Set(labels).size !== labels.length) error = 'Each option needs a different name.';
   $('optionsError').textContent = error;
   $('optionsError').classList.toggle('hidden', !error);
@@ -274,8 +260,8 @@ function buildPhaseBar(plan) {
 
 function phaseTitle(phase) {
   if (phase.kind !== 'option') return PHASE_NAMES[phase.kind];
-  const n = state.plan.order.indexOf(phase.optionIndex) + 1;
-  return `Option ${n} of ${state.plan.order.length}`;
+  const n = state.plan.phases.filter((p) => p.kind === 'option').indexOf(phase) + 1;
+  return `Visit ${n} of 4`;
 }
 
 let lastPrompt = '';
@@ -293,7 +279,7 @@ function onPhase(phase, index) {
   $('settleChecks').classList.toggle('hidden', phase.kind !== 'settle');
   const title = $('optionTitle');
   if (phase.kind === 'option') {
-    title.textContent = state.plan.options[phase.optionIndex].label;
+    title.textContent = `${state.plan.options[phase.optionIndex].label}${phase.visit === 2 ? ' · second look' : ''}`;
     title.classList.remove('hidden');
   } else {
     title.classList.add('hidden');
@@ -437,19 +423,9 @@ async function finishSession(result) {
   go('results');
 }
 
-// ---------- Results (raw numbers; the Body Vote comes in Phase 3) ----------
+// ---------- Results (interim; the designed Body Vote screen comes after the ABBA null test passes) ----------
 
-function fmtChange(v, digits, unit) {
-  if (v == null || Number.isNaN(v)) return { text: '—', cls: '' };
-  if (Math.abs(v) < 0.5 * 10 ** -digits) return { text: `0${unit}`, cls: '' };
-  const sign = v > 0 ? '+' : '';
-  return { text: `${sign}${v.toFixed(digits)}${unit}`, cls: v > 0 ? 'up' : v < 0 ? 'down' : '' };
-}
-
-function biggestExpressionShift(change) {
-  const top = Object.entries(change).filter(([, v]) => v != null).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
-  return top ? fmtChange(top[1], 0, ` ${top[0]}`) : { text: '—', cls: '' };
-}
+const fmt = (v, digits = 0) => (v == null ? '—' : v.toFixed(digits));
 
 function cell(row, content, cls = '') {
   const td = document.createElement('td');
@@ -458,47 +434,70 @@ function cell(row, content, cls = '') {
   row.appendChild(td);
 }
 
+function verdictText(v) {
+  switch (v.kind) {
+    case 'lean':
+      return {
+        title: `Your body stayed calmer with "${v.calmerLabel}"`,
+        note: `In both rounds your pulse was lower while imagining "${v.calmerLabel}" (by ${fmt(Math.abs(v.round1), 1)} and ${fmt(Math.abs(v.round2), 1)} bpm), `
+          + `both beyond the normal wobble of a resting pulse (${fmt(v.threshold, 1)} bpm). A higher pulse for "${v.tenserLabel}" can mean tension or excitement: which was it?`,
+      };
+    case 'tooClose':
+      return {
+        title: 'Too close to call',
+        note: v.agree
+          ? `Both rounds pointed the same way, but not by more than ${fmt(v.threshold, 1)} bpm each, which is within the normal minute-to-minute wobble of a resting pulse.`
+          : `The two rounds pointed in opposite directions (${fmt(v.round1, 1)} vs ${fmt(v.round2, 1)} bpm), so your body didn't clearly prefer either option.`,
+      };
+    case 'notEnough':
+      return { title: 'Not enough clear signal', note: 'At least one visit had too few reliable pulse readings. Better light on your face and staying still usually fix this.' };
+    default:
+      return { title: 'Partial results', note: 'The session ended before both options were visited twice.' };
+  }
+}
+
 function renderResults(result, sessionName, recordingName) {
   const a = analyzeSession(result);
-  console.log(`Session done (completed=${result.completed}): baseline pulse ${a.baseline.pulse?.toFixed(1)}, breathing ${a.baseline.breathing?.toFixed(1)}, blinks/min ${a.baseline.blinksPerMin?.toFixed(1)} · `
-    + a.options.map((o) => `${o.label}: pulse ${o.change.pulse?.toFixed(1)}, breathing ${o.change.breathing?.toFixed(1)}, blinks ${o.change.blinksPerMin?.toFixed(1)}`).join(' · ')
-    + ` · series sizes ${Object.entries(result.series).map(([k, v]) => `${k}=${v.length}`).join(' ')} · saved ${sessionName}`);
-  $('resultsTitle').textContent = result.completed ? 'How your body reacted' : 'Partial results';
-  $('resultsNote').textContent = `Each option compared with your own calm baseline (pulse ${a.baseline.pulse?.toFixed(0) ?? '—'} bpm, `
-    + `breathing ${a.baseline.breathing?.toFixed(1) ?? '—'}/min, ${a.baseline.blinksPerMin?.toFixed(0) ?? '—'} blinks/min). `
-    + 'Orange = more aroused than baseline, green = calmer. The Body Vote verdict is the next step of the build.';
+  console.log(`Session done (completed=${result.completed}): verdict ${JSON.stringify(a.verdict)} · visits `
+    + a.visits.map((v) => `${v.label}#${v.visit} pulse ${fmt(v.stats.pulse, 1)} (n${v.stats.pulseReadings})`).join(' · ')
+    + ` · saved ${sessionName}`);
+
+  const text = verdictText(a.verdict);
+  $('resultsTitle').textContent = text.title;
+  $('resultsNote').textContent = text.note;
 
   const table = document.createElement('table');
   table.className = 'results';
   const head = table.createTHead().insertRow();
-  for (const h of ['Option', 'Pulse', 'Breathing', 'Blinks', 'Biggest expression shift']) {
+  for (const h of ['Visit', 'Option', 'Pulse', 'Breathing', 'Blinks', 'Signal']) {
     const th = document.createElement('th');
     th.textContent = h;
     head.appendChild(th);
   }
   const body = table.createTBody();
-  for (const o of a.options) {
+  if (a.baseline) {
     const row = body.insertRow();
-    cell(row, o.label);
-    const p = fmtChange(o.change.pulse, 1, ' bpm');
-    cell(row, p.text, `num ${p.cls}`);
-    const b = fmtChange(o.change.breathing, 1, ' /min');
-    cell(row, b.text, `num ${b.cls}`);
-    const k = fmtChange(o.change.blinksPerMin, 0, ' /min');
-    cell(row, k.text, `num ${k.cls}`);
-    const e = biggestExpressionShift(o.change.expression);
-    cell(row, e.text, 'num');
+    cell(row, 'Baseline');
+    cell(row, 'Calm scene', 'muted');
+    cell(row, `${fmt(a.baseline.pulse)} bpm`, 'num');
+    cell(row, `${fmt(a.baseline.breathing, 1)} /min`, 'num');
+    cell(row, `${fmt(a.baseline.blinksPerMin)} /min`, 'num');
+    cell(row, a.baseline.enoughSignal ? 'good' : 'weak', a.baseline.enoughSignal ? '' : 'up');
   }
-  if (!a.options.length) {
+  a.visits.forEach((v, i) => {
     const row = body.insertRow();
-    cell(row, 'The session ended before any option was measured.');
-  }
+    cell(row, `${i + 1}`);
+    cell(row, v.label);
+    cell(row, `${fmt(v.stats.pulse)} bpm`, 'num');
+    cell(row, `${fmt(v.stats.breathing, 1)} /min`, 'num');
+    cell(row, `${fmt(v.stats.blinksPerMin)} /min`, 'num');
+    cell(row, v.stats.enoughSignal ? 'good' : 'weak', v.stats.enoughSignal ? '' : 'up');
+  });
   $('resultsTable').innerHTML = '';
   $('resultsTable').appendChild(table);
 
-  const hrv = a.sessionHrv ? ` Session HRV: ${Math.round(a.sessionHrv.rmssd)} ms RMSSD.` : '';
-  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}Saved: sessions/${sessionName}`
-    + `${recordingName ? ` · recordings/${recordingName}` : ''}.${hrv}`;
+  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}The vote uses pulse only; breathing and blinks are shown for reference. `
+    + `Saved: sessions/${sessionName}${recordingName ? ` · recordings/${recordingName}` : ''}`;
 }
 
 $('newSession').onclick = () => {

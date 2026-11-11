@@ -196,6 +196,24 @@ smartspectra-challenge/
 | 2026-11-11 | Live preview during measurement (SDK frames, REC badge), one explicitly chosen camera for preview + measurement, auto-stop counted from when measuring starts, copy-log icon. |
 | 2026-11-11 | **Phase 2:** the real Gut Check app: welcome, options, consent, camera check, the full guided session (settle → baseline → options in random order with resets → end baseline) with progress bar, prompts, guidance hints and a small live thumbnail, and a first results table. Demo mode runs a whole session from a recording. Signal Lab moved to its own page. Verified with automated demo sessions + screenshots. |
 
+## The control experiment (Nov 11, two real 6-minute sessions)
+
+| Session | Options | Pulse gap (mean) | Pulse gap (median of reliable readings) |
+|---|---|---|---|
+| A: null test | "drink coffee" vs "drink tea" (should be no difference) | 8.0 bpm | 4.1 bpm |
+| B: real decision | "stay in my city" vs "move to Bangalore" | 6.6 bpm | 2.0 bpm |
+
+- In **both** sessions the **second** option came out higher: the body drifts during a session, and with one visit per option that drift looks like a preference.
+- Every option was more arousing than the calm baseline: thinking about your life is simply more stimulating than picturing a cup of tea. Comparing options to the baseline would colour everything "tense".
+- HRV never became reliable (confidence ~10/100, never stable). Expressions drifted towards "sad" over time in both sessions, whatever the option.
+- Session B lost its last minute to "too dark" (~11 PM lighting).
+
+**Conclusion:** single-visit sessions can't tell options apart. The real decision's gap was smaller than the tea-vs-coffee control's.
+
+**Redesign ("Gut Check asks twice"):** exactly two options, each visited twice in a mirrored order (A B B A or B A A B), one minute per visit. The vote compares options with each other, uses pulse only (median of stable, confident readings, skipping each block's first 15 s), checks data quality per visit, and only leans when both rounds agree.
+
+**Calibration on real data:** cutting the two sessions' pulse into fake A/B/B/A sessions (labels meaningless) showed one-minute blocks differing by **6–9 bpm by pure chance**. A rule of "both rounds agree and beat the visit-to-visit wobble" picked a fake winner ~87% of the time; requiring **each round to beat max(wobble, 6 bpm)** brought that to ~26%. That rule is used now, but 26% is still too high to call it a reliable vote (rough estimate: 2 sessions, overlapping windows).
+
 ## What real data taught us (Nov 11 live test)
 
 | Signal | Behaviour | Design decision |

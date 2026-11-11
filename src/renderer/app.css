@@ -39,6 +39,7 @@ h2 { font-size: 28px; line-height: 1.2; margin: 0 0 12px; }
 .lead { color: var(--muted); font-size: 16px; margin: 0 0 24px; }
 .fine { color: var(--muted); font-size: 12px; margin-top: 18px; }
 .error { color: var(--err); }
+.muted { color: var(--muted); }
 .hidden { display: none !important; }
 
 /* ---------- Controls ---------- */
