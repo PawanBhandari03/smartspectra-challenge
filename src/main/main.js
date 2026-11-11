@@ -182,7 +182,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1280,
     height: 860,
-    backgroundColor: '#0f1115',
+    backgroundColor: '#f6f6f4',
     webPreferences: {
       preload: path.join(appRoot, 'dist/preload.js'),
       contextIsolation: true,

@@ -1,13 +1,13 @@
 :root {
-  --bg: #0f1115;
-  --card: #181b22;
-  --line: #2a2f3a;
-  --text: #e8eaf0;
-  --muted: #8b93a7;
-  --accent: #7c9cff;
-  --ok: #3ecf8e;
-  --warn: #f5a524;
-  --err: #ff6b6b;
+  --bg: #f6f6f4;
+  --card: #ffffff;
+  --line: #e3e3de;
+  --text: #15171a;
+  --muted: #6e737c;
+  --accent: #111418;
+  --ok: #0f6b52;
+  --warn: #9a6200;
+  --err: #b42318;
 }
 
 * { box-sizing: border-box; }
@@ -65,9 +65,9 @@ main {
 .icon-btn.done { color: var(--ok); border-color: var(--ok); }
 
 button, select {
-  background: #222734;
+  background: #ffffff;
   color: var(--text);
-  border: 1px solid var(--line);
+  border: 1px solid #cfcfc8;
   border-radius: 8px;
   padding: 7px 12px;
   font: inherit;
@@ -75,7 +75,7 @@ button, select {
 }
 
 button:disabled { opacity: 0.4; cursor: not-allowed; }
-button.primary { background: var(--accent); border-color: var(--accent); color: #0b0d12; font-weight: 600; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
 .video-wrap {
   position: relative;
@@ -153,13 +153,13 @@ video, #liveCanvas {
 .vital .q { font-size: 11px; margin-top: 4px; color: var(--muted); }
 .vital .q.stable { color: var(--ok); }
 
-.chip { padding: 3px 10px; border-radius: 999px; background: #222734; color: var(--muted); font-size: 12px; }
-.chip.live { background: var(--err); color: #fff; }
-.chip.replay { background: var(--accent); color: #0b0d12; }
+.chip { padding: 3px 10px; border-radius: 6px; background: #f1f1ee; color: var(--muted); font-size: 12px; border: 1px solid var(--line); }
+.chip.live { background: var(--err); color: #fff; border-color: var(--err); }
+.chip.replay { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-left: 6px; font-weight: 500; }
-.badge.warn { background: rgba(245, 165, 36, 0.15); color: var(--warn); }
-.badge.ok { background: rgba(62, 207, 142, 0.15); color: var(--ok); }
+.badge.warn { background: #fff6e0; color: var(--warn); }
+.badge.ok { background: #e6f2ee; color: var(--ok); }
 
 .muted { color: var(--muted); }
 .back { color: var(--muted); text-decoration: none; margin-right: 8px; }

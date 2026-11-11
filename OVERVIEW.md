@@ -198,6 +198,7 @@ smartspectra-challenge/
 | 2026-11-11 | **Phase 2:** the real Gut Check app: welcome, options, consent, camera check, the full guided session (settle → baseline → options in random order with resets → end baseline) with progress bar, prompts, guidance hints and a small live thumbnail, and a first results table. Demo mode runs a whole session from a recording. Signal Lab moved to its own page. Verified with automated demo sessions + screenshots. |
 | 2026-11-11 | Two real sessions (control + real decision) → the control experiment (below). Redesign: "asks twice" (A B B A), pulse-only, calibrated verdict, ~4 min session with faster option-specific prompts. Product decision: **a mirror, not a verdict** — results with pulse timeline, reaction moments and reflection questions. |
 | 2026-11-12 | **Visual redesign:** colour brand (violet→pink), top bar with logo + navigation, new welcome page. The session screen now has the Signal Lab layout: live camera, live tiles (pulse with a heart beating at your rate, breathing, blinks, expression), session log with copy, and an optional focus mode. **History** screen to reopen past sessions. |
+| 2026-11-12 | Restyled to a **clean, professional light theme** (Pawan: the violet/pink gradients looked AI-made): white surfaces, near-black text and buttons, one deep-green accent, no gradients or glows. Options stay blue/orange (checked for colour-blind safety). Signal Lab restyled to match. Behaviour unchanged. |
 
 ## The control experiment (Nov 11, two real 6-minute sessions)
 

@@ -3,11 +3,11 @@
 // prompt that was on screen at that time.
 
 const SVG = 'http://www.w3.org/2000/svg';
-const OPTION_COLORS = ['#3987e5', '#d95926'];
-const INK = '#eceef3';
-const MUTED = '#898781';
-const GRID = '#2c2c2a';
-const SURFACE = '#161a21';
+const OPTION_COLORS = ['#2a78d6', '#eb6834'];
+const INK = '#15171a';
+const MUTED = '#6e737c';
+const GRID = '#ececE8';
+const SURFACE = '#ffffff';
 const GAP_MS = 4000;
 
 function el(name, attrs = {}, parent = null) {
@@ -85,7 +85,7 @@ function renderTimeline(container, session, trace, highlights) {
     const x0 = x(Math.max(p.startMs, start));
     const x1 = x(p.endMs);
     if (p.kind === 'option') {
-      el('rect', { x: x0, y: m.top, width: Math.max(0, x1 - x0), height: plotH, fill: OPTION_COLORS[p.optionIndex], 'fill-opacity': 0.16 }, svg);
+      el('rect', { x: x0, y: m.top, width: Math.max(0, x1 - x0), height: plotH, fill: OPTION_COLORS[p.optionIndex], 'fill-opacity': 0.08 }, svg);
       el('rect', { x: x0, y: m.top - 6, width: Math.max(0, x1 - x0), height: 4, rx: 2, fill: OPTION_COLORS[p.optionIndex] }, svg);
       const label = el('text', { x: x0 + 4, y: m.top - 12, fill: INK, 'font-size': 11 }, svg);
       label.textContent = `${shorten(session.options[p.optionIndex].label, Math.max(4, Math.floor((x1 - x0) / 7) - 3))} ${p.visit}`;

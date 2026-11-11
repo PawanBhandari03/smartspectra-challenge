@@ -13,13 +13,8 @@
   <header id="appBar" class="app-bar">
     <button class="brand" data-go="welcome" title="Home">
       <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
-        <defs>
-          <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#8b6cff"/><stop offset="1" stop-color="#ff5fa2"/>
-          </linearGradient>
-        </defs>
-        <rect width="32" height="32" rx="9" fill="url(#logoGrad)"/>
-        <path d="M5 17h5l2.5-6 4 11 3-8 1.8 3H27" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect width="32" height="32" rx="8" fill="#111418"/>
+        <path d="M5 17h5l2.5-6 4 11 3-8 1.8 3H27" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span>Gut Check</span>
     </button>
@@ -33,22 +28,14 @@
   <!-- 1. Welcome -->
   <section id="screen-welcome" class="screen active">
     <div class="center narrow hero">
-      <svg class="hero-line" viewBox="0 0 600 80" aria-hidden="true">
-        <defs>
-          <linearGradient id="heroGrad" x1="0" x2="1">
-            <stop offset="0" stop-color="#8b6cff" stop-opacity="0"/><stop offset=".3" stop-color="#8b6cff"/>
-            <stop offset=".7" stop-color="#ff5fa2"/><stop offset="1" stop-color="#ff5fa2" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d="M0 45h200l14-28 22 52 18-38 12 14h334" fill="none" stroke="url(#heroGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h1>Your body votes<br><span class="grad-text">on your decisions.</span></h1>
+      <p class="eyebrow">Decision reflection · camera-based vitals</p>
+      <h1>Your body votes on your decisions.</h1>
       <p class="lead">Torn between two options? Imagine living each one while your camera quietly reads your pulse, blinks
         and expressions. Then see where your body reacted, moment by moment.</p>
       <div class="step-cards">
-        <div class="step-card"><span class="step-icon violet">1</span><b>Name two options</b><span>the choices you're torn between</span></div>
-        <div class="step-card"><span class="step-icon pink">2</span><b>Imagine each, twice</b><span>guided scenes, about 4 minutes</span></div>
-        <div class="step-card"><span class="step-icon teal">3</span><b>See your mirror</b><span>honest, moment-by-moment reactions</span></div>
+        <div class="step-card"><span class="step-num">01</span><b>Name two options</b><span>the choices you're torn between</span></div>
+        <div class="step-card"><span class="step-num">02</span><b>Imagine each, twice</b><span>guided scenes, about 4 minutes</span></div>
+        <div class="step-card"><span class="step-num">03</span><b>See your mirror</b><span>honest, moment-by-moment reactions</span></div>
       </div>
       <button id="welcomeNext" class="primary big">Start a Gut Check</button>
       <p class="fine">A reflection tool for general wellness, not medical advice. Video never leaves your computer.</p>
@@ -76,10 +63,10 @@
       <p class="eyebrow">Step 2 of 3</p>
       <h2>Before we start</h2>
       <ul class="facts">
-        <li><span class="fact-icon teal">◉</span><div><b>Your camera measures, nothing is filmed.</b> Video is processed on this computer. Only numbers are saved, on this computer.</div></li>
-        <li><span class="fact-icon violet">◐</span><div><b>It's a mirror, not a decision machine.</b> A racing heart can mean fear or excitement. The result is a prompt to reflect, never a verdict.</div></li>
-        <li><span class="fact-icon pink">✚</span><div><b>Not medical advice.</b> Gut Check is a general wellness tool and doesn't diagnose anything.</div></li>
-        <li><span class="fact-icon amber">■</span><div><b>You can stop at any time.</b></div></li>
+        <li><span class="fact-icon">1</span><div><b>Your camera measures, nothing is filmed.</b> Video is processed on this computer. Only numbers are saved, on this computer.</div></li>
+        <li><span class="fact-icon">2</span><div><b>It's a mirror, not a decision machine.</b> A racing heart can mean fear or excitement. The result is a prompt to reflect, never a verdict.</div></li>
+        <li><span class="fact-icon">3</span><div><b>Not medical advice.</b> Gut Check is a general wellness tool and doesn't diagnose anything.</div></li>
+        <li><span class="fact-icon">4</span><div><b>You can stop at any time.</b></div></li>
       </ul>
       <label class="check"><input id="consentBox" type="checkbox"> I understand and want to continue</label>
       <div class="actions">
