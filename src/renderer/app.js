@@ -175,6 +175,30 @@ async function openCamera() {
   }
   $('setupVideo').srcObject = state.stream;
   $('setupPlaceholder').classList.add('hidden');
+  trackPreviewFps(state.stream);
+}
+
+// Free frame-rate check while the preview is open. The SDK needs 25+ frames per second.
+function trackPreviewFps(stream) {
+  const video = $('setupVideo');
+  let frames = [];
+  const onFrame = () => {
+    if (state.stream !== stream) return;
+    const now = performance.now();
+    frames.push(now);
+    frames = frames.filter((t) => now - t < 2000);
+    const fps = frames.length / 2;
+    const info = $('fpsInfo');
+    if (fps >= 25) {
+      info.textContent = `Camera smooth ✓ (${fps > 30 ? '30+' : Math.round(fps)} fps)`;
+      info.className = 'fps-info good';
+    } else {
+      info.textContent = `Camera slow (${Math.round(fps)} fps, needs 25+). Add light in front of you.`;
+      info.className = 'fps-info bad';
+    }
+    video.requestVideoFrameCallback(onFrame);
+  };
+  video.requestVideoFrameCallback(onFrame);
 }
 
 function closeCamera() {
@@ -182,6 +206,7 @@ function closeCamera() {
   state.stream.getTracks().forEach((t) => t.stop());
   state.stream = null;
   $('setupVideo').srcObject = null;
+  $('fpsInfo').textContent = '';
   $('setupPlaceholder').textContent = 'Camera is off';
   $('setupPlaceholder').classList.remove('hidden');
 }
@@ -352,6 +377,7 @@ async function beginSession() {
   source.on('processingStatus', (status) => {
     if (!demo && status === ProcessingStatus.kError) endWithError(`The measurement stopped: ${lastError || 'unknown error'}`);
   });
+  if (!demo) source.on('fps', (sent) => { $('thumbBadge').textContent = `● REC · ${sent} fps`; });
 
   buildPhaseBar(plan);
   lastPrompt = '';
@@ -469,7 +495,7 @@ function renderResults(result, sessionName, recordingName) {
   const table = document.createElement('table');
   table.className = 'results';
   const head = table.createTHead().insertRow();
-  for (const h of ['Visit', 'Option', 'Pulse', 'Breathing', 'Blinks', 'Signal']) {
+  for (const h of ['Visit', 'Option', 'Pulse', 'Blinks', 'Signal']) {
     const th = document.createElement('th');
     th.textContent = h;
     head.appendChild(th);
@@ -480,7 +506,6 @@ function renderResults(result, sessionName, recordingName) {
     cell(row, 'Baseline');
     cell(row, 'Calm scene', 'muted');
     cell(row, `${fmt(a.baseline.pulse)} bpm`, 'num');
-    cell(row, `${fmt(a.baseline.breathing, 1)} /min`, 'num');
     cell(row, `${fmt(a.baseline.blinksPerMin)} /min`, 'num');
     cell(row, a.baseline.enoughSignal ? 'good' : 'weak', a.baseline.enoughSignal ? '' : 'up');
   }
@@ -489,14 +514,13 @@ function renderResults(result, sessionName, recordingName) {
     cell(row, `${i + 1}`);
     cell(row, v.label);
     cell(row, `${fmt(v.stats.pulse)} bpm`, 'num');
-    cell(row, `${fmt(v.stats.breathing, 1)} /min`, 'num');
     cell(row, `${fmt(v.stats.blinksPerMin)} /min`, 'num');
     cell(row, v.stats.enoughSignal ? 'good' : 'weak', v.stats.enoughSignal ? '' : 'up');
   });
   $('resultsTable').innerHTML = '';
   $('resultsTable').appendChild(table);
 
-  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}The vote uses pulse only; breathing and blinks are shown for reference. `
+  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}The vote uses pulse only; blinks are shown for reference. `
     + `Saved: sessions/${sessionName}${recordingName ? ` · recordings/${recordingName}` : ''}`;
 }
 

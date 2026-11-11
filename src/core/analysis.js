@@ -13,7 +13,7 @@
 // The SDK reports rolling averages, so the start of each block still reflects the previous one.
 const LAGS = { pulseSkipMs: 15000, breathingSkipMs: 30000 };
 const MIN_CONFIDENCE = 50;
-const MIN_PULSE_READINGS = 12;
+const MIN_PULSE_READINGS = 8;
 // On fake A/B sessions cut from real recordings (labels meaningless), pulse medians of one-minute
 // blocks differed by 6-9 bpm by chance. Each round must beat both this floor and the visit wobble.
 const MIN_ROUND_GAP_BPM = 6;

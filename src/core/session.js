@@ -4,46 +4,47 @@ const { extractSample, BlinkCounter } = require('./vitals');
 const SESSION_VERSION = 2;
 const RUNNING = 3; // ProcessingStatus.kRunning
 
+// About 4 minutes in total: long sessions were uncomfortable and heated the phone used as camera.
 const TIMING = {
-  settleMinMs: 20000,
+  settleMinMs: 15000,
   settleWarnMs: 45000,
   settleMaxMs: 90000,
-  baselineMs: 60000,
-  optionMs: 60000,
-  resetMs: 15000,
-  promptEveryMs: 15000,
+  baselineMs: 30000,
+  optionMs: 40000,
+  resetMs: 10000,
+  promptEveryMs: 10000,
 };
 
 const MIN_FRAMES_PER_SEC = 25;
 
 // The baseline uses the same kind of task as the options (reading + picturing a scene),
 // so differences come from the choice, not from "staring" vs "imagining".
+// A neutral reference scene, deliberately the same every time.
 const BASELINE_PROMPTS = [
-  'Let\'s start with something ordinary. Read each line silently and picture it.',
-  'Picture your kitchen on a normal morning. Notice the light coming in.',
-  'You fill a cup with water and wait for it to warm.',
-  'You take a slow sip. Nothing to decide, nothing to do.',
+  'Sit back, relaxed. Read each line silently and picture it.',
+  'A cup of tea on a quiet, ordinary morning.',
+  'Nothing to decide. Just breathe normally.',
 ];
 
-const RESET_PROMPTS = ['Let that go.', 'Breathe normally. The next one is coming up.'];
+const RESET_PROMPTS = ['Let that go. Breathe normally.'];
 
-// Each option is visited twice, with different scenes, so the result can be checked for consistency.
+// Each option is visited twice from different angles; every prompt names the option so the
+// scene stays tied to the choice.
 function optionPrompts(option, visit) {
+  const o = option.label;
   if (visit === 1) {
     return [
-      `It's six months from now. You chose: ${option.label}.`,
-      'Picture waking up on a Monday morning. Where are you? What do you see first?',
-      option.detail
-        ? `Remember: ${option.detail}. How does that shape your day?`
-        : 'Who is around you? How do you spend your day?',
-      'Now it\'s evening. How does your body feel? Tired, light, restless?',
+      `You chose: ${o}. It's your first morning. What do you notice first?`,
+      option.detail ? `${o}: ${option.detail}. How does that feel day to day?` : `${o}: who is around you most days now?`,
+      `${o}: a month in. How do your evenings feel?`,
+      `${o}: how does your body feel about this life? Light, tight, restless?`,
     ];
   }
   return [
-    `Back to: ${option.label}. It's a year from now.`,
-    'Picture an ordinary weekend there. What are you doing?',
-    'One day something goes wrong. How do you handle it there?',
-    'Imagine telling someone close to you how it turned out. What do you say?',
+    `Back to: ${o}. It's a year later. What did you gain?`,
+    `${o}: what did you give up for it?`,
+    `${o}: one hard day. How do you handle it?`,
+    `${o}: you tell a close friend how it went. What do you say?`,
   ];
 }
 
