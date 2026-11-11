@@ -81,5 +81,6 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 | Date | Used for | Credits | Left |
 |---|---|---|---|
 | — | start | 0 | 100 |
-| Nov 11 | First live test (18 s, stopped by low frame rate) | ~1 | ~99 |
-| Nov 11 | Second live test (90 s, phone camera, success) | ~3 | ~96 (confirm on dashboard) |
+| Nov 11 | First live test (18 s) + second live test (90 s) | 3 | **97** (dashboard) |
+
+A 90 s test costs about 2–3 credits, cheaper than the "1 credit per 30 s from the click" estimate (startup time seems not to count).

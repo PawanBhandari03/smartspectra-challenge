@@ -33,12 +33,43 @@ function sendEvent(name, ...args) {
   if (win && !win.isDestroyed()) win.webContents.send('sdk:event', name, ...args);
 }
 
+// Live preview while measuring: the SDK owns the camera, so we show a small, throttled copy of its frames.
+const PREVIEW_WIDTH = 320;
+const PREVIEW_INTERVAL_MS = 100;
+const BYTES_PER_PIXEL = { 0: 3, 1: 3, 2: 4, 3: 4 }; // RGB, BGR, RGBA, BGRA
+let lastPreviewAt = 0;
+
+function onVideoFrame(buf, width, height, stride, pixelFormat) {
+  const now = Date.now();
+  if (now - lastPreviewAt < PREVIEW_INTERVAL_MS || !win || win.isDestroyed()) return;
+  const bpp = BYTES_PER_PIXEL[pixelFormat];
+  if (!bpp || !width || !height) return;
+  lastPreviewAt = now;
+  const outW = PREVIEW_WIDTH;
+  const outH = Math.round((height * outW) / width);
+  const out = Buffer.alloc(outW * outH * 4);
+  const bgr = pixelFormat === 1 || pixelFormat === 3;
+  for (let y = 0; y < outH; y++) {
+    const row = Math.floor((y * height) / outH) * stride;
+    for (let x = 0; x < outW; x++) {
+      const i = row + Math.floor((x * width) / outW) * bpp;
+      const o = (y * outW + x) * 4;
+      out[o] = buf[i + (bgr ? 2 : 0)];
+      out[o + 1] = buf[i + 1];
+      out[o + 2] = buf[i + (bgr ? 0 : 2)];
+      out[o + 3] = 255;
+    }
+  }
+  win.webContents.send('sdk:preview', out, outW, outH);
+}
+
 function ensureSdk() {
   if (sdk) return sdk;
   sdk = new SmartSpectraSDK({ apiKey, requestedMetrics: REQUESTED_METRICS, enableTelemetry: false });
   for (const name of ['metrics', 'validationStatus', 'processingStatus', 'error', 'frameSentThrough']) {
     sdk.on(name, (...args) => sendEvent(name, ...args));
   }
+  sdk.on('videoOutput', onVideoFrame);
   sdk.useCamera(cameraSelection(), CAPTURE);
   return sdk;
 }

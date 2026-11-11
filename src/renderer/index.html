@@ -18,8 +18,10 @@
       <div class="card">
         <div class="video-wrap">
           <video id="preview" autoplay muted playsinline></video>
+          <canvas id="liveCanvas" class="hidden"></canvas>
           <div class="oval"></div>
           <div id="videoPlaceholder" class="placeholder">Camera is off</div>
+          <div id="recBadge" class="rec hidden">● REC <span id="recTime">0:00</span></div>
         </div>
         <div class="row">
           <select id="cameraSelect"></select>

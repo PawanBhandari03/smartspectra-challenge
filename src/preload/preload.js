@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('gutCheck', {
     stop: () => ipcRenderer.invoke('sdk:stop'),
     destroy: () => ipcRenderer.invoke('sdk:destroy'),
     readiness: () => ipcRenderer.invoke('sdk:readiness'),
+    onPreview: (callback) => {
+      ipcRenderer.removeAllListeners('sdk:preview');
+      ipcRenderer.on('sdk:preview', (_e, pixels, width, height) => callback(pixels, width, height));
+    },
     onEvent: (callback) => {
       ipcRenderer.removeAllListeners('sdk:event');
       ipcRenderer.on('sdk:event', (_e, name, ...args) => callback(name, ...args));

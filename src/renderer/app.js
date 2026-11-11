@@ -10,6 +10,7 @@ const nameOf = (table, value) => Object.keys(table).find((k) => table[k] === val
 const $ = (id) => document.getElementById(id);
 const ui = {
   preview: $('preview'), placeholder: $('videoPlaceholder'), modeChip: $('modeChip'),
+  liveCanvas: $('liveCanvas'), recBadge: $('recBadge'), recTime: $('recTime'),
   cameraSelect: $('cameraSelect'), refreshCameras: $('refreshCameras'),
   openCam: $('openCam'), closeCam: $('closeCam'), camInfo: $('camInfo'), camFps: $('camFps'),
   exposureRow: $('exposureRow'), exposureMode: $('exposureMode'), exposureTime: $('exposureTime'), exposureValue: $('exposureValue'),
@@ -31,7 +32,31 @@ let runStartedAt = 0;
 let autoStopTimer = null;
 let clockTimer = null;
 let sdkFailed = false;
+let reopenPreviewAfterRun = false;
+let livePreviewSeen = false;
 const tracker = new VitalsTracker();
+const liveCtx = ui.liveCanvas.getContext('2d');
+
+function setPlaceholder(text) {
+  ui.placeholder.textContent = text;
+  ui.placeholder.classList.toggle('hidden', !text);
+}
+
+bridge.onPreview((pixels, width, height) => {
+  if (!(source instanceof LiveSource)) return;
+  if (ui.liveCanvas.width !== width) ui.liveCanvas.width = width;
+  if (ui.liveCanvas.height !== height) ui.liveCanvas.height = height;
+  liveCtx.putImageData(new ImageData(new Uint8ClampedArray(pixels.buffer, pixels.byteOffset, pixels.byteLength), width, height), 0, 0);
+  if (!livePreviewSeen) {
+    livePreviewSeen = true;
+    ui.liveCanvas.classList.remove('hidden');
+    setPlaceholder('');
+  }
+});
+
+function formatClock(sec) {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
 
 function log(msg) {
   const line = `${new Date().toLocaleTimeString()}  ${msg}\n`;
@@ -167,7 +192,7 @@ async function openCamera() {
   }
   const track = stream.getVideoTracks()[0];
   ui.preview.srcObject = stream;
-  ui.placeholder.classList.add('hidden');
+  setPlaceholder('');
   const s = track.getSettings();
   ui.camInfo.textContent = `${s.width}×${s.height} @ ${Math.round(s.frameRate)} fps requested`;
   fpsFrames = [];
@@ -187,7 +212,7 @@ async function closeCamera() {
   for (const t of stream.getTracks()) t.stop();
   stream = null;
   ui.preview.srcObject = null;
-  ui.placeholder.classList.remove('hidden');
+  setPlaceholder('Camera is off');
   ui.camFps.textContent = '—';
   ui.camFps.className = '';
   ui.camInfo.textContent = '—';
@@ -265,7 +290,11 @@ function beginRun(src, mode) {
   clockTimer = setInterval(() => {
     const sec = Math.floor((performance.now() - runStartedAt) / 1000);
     ui.elapsed.textContent = `${sec} s`;
-    if (mode === 'live') ui.credits.textContent = Math.ceil(sec / 30);
+    if (mode === 'live') {
+      ui.credits.textContent = Math.ceil(sec / 30);
+      ui.recTime.textContent = formatClock(sec);
+      if (!livePreviewSeen && sec >= 15) setPlaceholder('Measuring… (live preview not available from this camera)');
+    }
     renderVitals();
   }, 500);
   setMode(mode);
@@ -278,7 +307,12 @@ async function startLive() {
     return;
   }
   // The SDK opens the camera itself in the main process, so the preview must let go of it first.
+  reopenPreviewAfterRun = !!stream;
   await closeCamera();
+  livePreviewSeen = false;
+  setPlaceholder('Starting measurement…');
+  ui.recTime.textContent = '0:00';
+  ui.recBadge.classList.remove('hidden');
   const src = new LiveSource(bridge, {
     mode: 'live',
     capture: 'native',
@@ -359,8 +393,18 @@ function finishRun() {
     + ` · HRV ${hrv?.rmssd != null ? Math.round(hrv.rmssd) + ' ms' : 'none'} · stress ${hrv?.baevsky != null ? hrv.baevsky.toFixed(2) : 'none'}`
     + ` · expression ${expression?.top ?? 'none'} · blinks ${tracker.blinkCount}`);
   clearInterval(clockTimer);
+  const wasLive = source instanceof LiveSource;
   source = null;
   setMode('idle');
+  if (wasLive) {
+    ui.recBadge.classList.add('hidden');
+    ui.liveCanvas.classList.add('hidden');
+    setPlaceholder('Camera is off');
+    if (reopenPreviewAfterRun) {
+      reopenPreviewAfterRun = false;
+      openCamera();
+    }
+  }
 }
 
 async function refreshRecordings(select) {
