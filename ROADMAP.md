@@ -29,13 +29,18 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 
 ## Phase 2 — Replay mode + full flow (Nov 13–15)
 - [x] Replay mode: play a recorded session as if live (0 credits) — built early in Phase 1
-- [ ] Screen: enter options
-- [ ] Screen: consent / privacy
-- [ ] Screen: camera check with guide oval + lighting hints
-- [ ] Screen: baseline (60 s countdown)
-- [ ] Screen: guided visualization per option (prompts every ~15 s, random order)
-- [ ] Screen: automatic 20 s reset
-- [ ] Stop measurement immediately when the session ends
+- [x] Screen: welcome
+- [x] Screen: enter options (2–3, optional detail)
+- [x] Screen: consent / privacy
+- [x] Screen: camera check (camera picker, preview, guide oval, tips) + Live / Demo choice
+- [x] Session: settle phase gated on real signal quality (frames, face, pulse)
+- [x] Session: calm baseline (neutral visualization), options in random order (prompts every 15 s), 20 s resets, end baseline
+- [x] Session: progress bar, friendly guidance hints, small live thumbnail with REC, stop button
+- [x] Recording streamed to disk every 2 s; session JSON with full time series saved
+- [x] Stop measurement immediately when the session ends
+- [x] First results table (changes vs baseline)
+- [ ] 💳 👤 **Null test:** a real session with two near-identical options (e.g. "tea" vs "coffee") → measures the noise floor for "too close to call"
+- [ ] 💳 👤 **Real decision test:** a session with a decision that matters to you
 
 ## Phase 3 — Scoring + Body Vote (Nov 16–17)
 - [ ] Collect per-phase readings (only reliable / stable ones)

@@ -1,517 +1,506 @@
-const { ValidationCode, SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
+const { SmartSpectraErrorCode } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
-const { VitalsTracker } = require('../core/vitals');
+const { buildPlan, plannedDurationMs, SessionRunner } = require('../core/session');
+const { analyzeSession } = require('../core/analysis');
 const { REQUESTED_METRICS } = require('../core/metrics');
 
-const MIN_FPS = 25;
-
-const nameOf = (table, value) => Object.keys(table).find((k) => table[k] === value) || String(value);
-
 const $ = (id) => document.getElementById(id);
-const ui = {
-  preview: $('preview'), placeholder: $('videoPlaceholder'), modeChip: $('modeChip'),
-  liveCanvas: $('liveCanvas'), recBadge: $('recBadge'), recTime: $('recTime'),
-  cameraSelect: $('cameraSelect'), refreshCameras: $('refreshCameras'),
-  openCam: $('openCam'), closeCam: $('closeCam'), camInfo: $('camInfo'), camFps: $('camFps'),
-  exposureRow: $('exposureRow'), exposureMode: $('exposureMode'), exposureTime: $('exposureTime'), exposureValue: $('exposureValue'),
-  duration: $('duration'), startLive: $('startLive'), stopRun: $('stopRun'), checkDevice: $('checkDevice'),
-  elapsed: $('elapsed'), credits: $('credits'), sentFps: $('sentFps'), keyWarning: $('keyWarning'),
-  recordings: $('recordings'), speed: $('speed'), startReplay: $('startReplay'), refreshRecordings: $('refreshRecordings'),
-  vPulse: $('vPulse'), vPulseQ: $('vPulseQ'), vBreath: $('vBreath'), vBreathQ: $('vBreathQ'),
-  vHrv: $('vHrv'), vHrvQ: $('vHrvQ'), vStress: $('vStress'), vExpr: $('vExpr'), vExprQ: $('vExprQ'),
-  vBlinks: $('vBlinks'), vBlinkRate: $('vBlinkRate'),
-  procStatus: $('procStatus'), packets: $('packets'), validation: $('validation'), log: $('log'),
-  copyLog: $('copyLog'),
+const bridge = window.gutCheck.sdk;
+
+const MAX_OPTIONS = 3;
+const CAMERA_PREF_KEY = 'gutcheck.cameraName';
+
+// Friendly versions of the SDK's ValidationCode guidance.
+const GUIDANCE = {
+  1: 'We can\'t see your face. Look at the screen.',
+  2: 'Only one person in view, please.',
+  3: 'Center your face in the frame.',
+  4: 'Adjust your distance to the camera.',
+  5: 'Too dark. Add light in front of you.',
+  6: 'Too bright behind you.',
+  7: 'Sit back a little so your chest is visible.',
+  10: 'Adjusting the camera…',
+  11: 'The camera is slowing down. Check your lighting.',
+  12: 'Try to keep still.',
+  13: 'Move back a little.',
+  14: 'Move a little closer.',
+  15: 'Lower the camera or sit up straighter.',
+  16: 'Raise the camera a little.',
+  17: 'Look straight at the screen.',
 };
 
-// Copies oldest-first so it reads top to bottom, plus the current vitals snapshot.
-async function copyLog() {
-  const lines = ui.log.textContent.trim().split('\n').reverse();
-  const snapshot = `Vitals on screen: pulse ${ui.vPulse.textContent} · breathing ${ui.vBreath.textContent} · HRV ${ui.vHrv.textContent}`
-    + ` · stress ${ui.vStress.textContent} · expression ${ui.vExpr.textContent} · blinks ${ui.vBlinks.textContent}`
-    + ` · status ${ui.procStatus.textContent} · guidance ${ui.validation.textContent}`;
-  try {
-    await navigator.clipboard.writeText(`${lines.join('\n')}\n${snapshot}\n`);
-  } catch (err) {
-    log(`Copy failed: ${err.message}`);
-    return;
-  }
-  $('copyIcon').classList.add('hidden');
-  $('copiedIcon').classList.remove('hidden');
-  ui.copyLog.classList.add('done');
-  setTimeout(() => {
-    $('copyIcon').classList.remove('hidden');
-    $('copiedIcon').classList.add('hidden');
-    ui.copyLog.classList.remove('done');
-  }, 1500);
+const PHASE_NAMES = { settle: 'Getting ready', baseline: 'Calm baseline', reset: 'Reset', endBaseline: 'Calm baseline' };
+
+const state = {
+  options: [{ label: '', detail: '' }, { label: '', detail: '' }],
+  info: { hasKey: false },
+  stream: null,
+  source: null,
+  runner: null,
+  plan: null,
+  demo: false,
+};
+
+// ---------- Navigation ----------
+
+function go(name) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === `screen-${name}`));
+  if (name === 'setup') return enterSetup();
+  closeCamera();
+  return Promise.resolve();
 }
 
-const bridge = window.gutCheck.sdk;
-let info = { hasKey: false };
-let stream = null;
-let measuredFps = 0;
-let source = null;
-let runStartedAt = 0;
-let autoStopTimer = null;
-let clockTimer = null;
-let sdkFailed = false;
-let reopenPreviewAfterRun = false;
-let livePreviewSeen = false;
-const tracker = new VitalsTracker();
-const liveCtx = ui.liveCanvas.getContext('2d');
+document.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => go(b.dataset.go); });
 
-function setPlaceholder(text) {
-  ui.placeholder.textContent = text;
-  ui.placeholder.classList.toggle('hidden', !text);
+// ---------- Options ----------
+
+function renderOptions() {
+  const list = $('optionList');
+  list.innerHTML = '';
+  state.options.forEach((opt, i) => {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+
+    const head = document.createElement('div');
+    head.className = 'head';
+    const title = document.createElement('span');
+    title.textContent = `Option ${i + 1}`;
+    head.appendChild(title);
+    if (state.options.length > 2) {
+      const remove = document.createElement('button');
+      remove.className = 'remove';
+      remove.textContent = 'Remove';
+      remove.onclick = () => { state.options.splice(i, 1); renderOptions(); };
+      head.appendChild(remove);
+    }
+
+    const label = document.createElement('input');
+    label.type = 'text';
+    label.className = 'label';
+    label.maxLength = 60;
+    label.placeholder = i === 0 ? 'e.g. Stay in my city' : i === 1 ? 'e.g. Move to Bangalore for the new job' : 'e.g. Take a gap year';
+    label.value = opt.label;
+    label.oninput = () => { opt.label = label.value; };
+
+    const detail = document.createElement('input');
+    detail.type = 'text';
+    detail.maxLength = 80;
+    detail.placeholder = 'Optional detail, e.g. "close to family, same salary"';
+    detail.value = opt.detail;
+    detail.oninput = () => { opt.detail = detail.value; };
+
+    card.append(head, label, detail);
+    list.appendChild(card);
+  });
+  $('addOption').classList.toggle('hidden', state.options.length >= MAX_OPTIONS);
 }
 
-bridge.onPreview((pixels, width, height) => {
-  if (!(source instanceof LiveSource)) return;
-  if (ui.liveCanvas.width !== width) ui.liveCanvas.width = width;
-  if (ui.liveCanvas.height !== height) ui.liveCanvas.height = height;
-  liveCtx.putImageData(new ImageData(new Uint8ClampedArray(pixels.buffer, pixels.byteOffset, pixels.byteLength), width, height), 0, 0);
-  if (!livePreviewSeen) {
-    livePreviewSeen = true;
-    ui.liveCanvas.classList.remove('hidden');
-    setPlaceholder('');
-  }
-});
+$('addOption').onclick = () => {
+  if (state.options.length < MAX_OPTIONS) state.options.push({ label: '', detail: '' });
+  renderOptions();
+};
 
-function formatClock(sec) {
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-}
+$('welcomeNext').onclick = () => { renderOptions(); go('options'); };
 
-function log(msg) {
-  const line = `${new Date().toLocaleTimeString()}  ${msg}\n`;
-  ui.log.textContent = (line + ui.log.textContent).slice(0, 20000);
-  console.log(msg);
-}
+$('optionsNext').onclick = () => {
+  const cleaned = state.options.map((o) => ({ label: o.label.trim(), detail: o.detail.trim() }));
+  const labels = cleaned.map((o) => o.label.toLowerCase());
+  let error = '';
+  if (cleaned.some((o) => !o.label)) error = 'Give every option a name (or remove the empty one).';
+  else if (new Set(labels).size !== labels.length) error = 'Each option needs a different name.';
+  $('optionsError').textContent = error;
+  $('optionsError').classList.toggle('hidden', !error);
+  if (error) return;
+  state.options = cleaned;
+  go('consent');
+};
 
-function setMode(mode) {
-  ui.modeChip.textContent = mode;
-  ui.modeChip.className = `chip ${mode === 'live' ? 'live' : mode === 'replay' ? 'replay' : ''}`;
-  const busy = mode !== 'idle';
-  ui.startLive.disabled = busy || !info.hasKey;
-  ui.checkDevice.disabled = busy || !info.hasKey;
-  ui.startReplay.disabled = busy || !ui.recordings.value;
-  ui.stopRun.disabled = !busy;
-  ui.closeCam.disabled = busy || !stream;
-  ui.openCam.disabled = busy || !!stream;
-  ui.cameraSelect.disabled = busy;
-}
+// ---------- Consent ----------
 
-// ---------- Camera check (browser camera, no credits) ----------
+$('consentBox').onchange = () => { $('consentNext').disabled = !$('consentBox').checked; };
+$('consentNext').onclick = () => go('setup');
 
-let fpsFrames = [];
-function trackPreviewFps() {
-  if (!stream) return;
-  const now = performance.now();
-  fpsFrames.push(now);
-  fpsFrames = fpsFrames.filter((t) => now - t < 2000);
-  measuredFps = fpsFrames.length / 2;
-  ui.camFps.textContent = measuredFps.toFixed(1);
-  ui.camFps.className = measuredFps >= MIN_FPS ? 'good' : 'bad';
-  ui.preview.requestVideoFrameCallback(trackPreviewFps);
-}
+// ---------- Setup: camera + data source ----------
 
-function setupExposureControls(track) {
-  const caps = track.getCapabilities ? track.getCapabilities() : {};
-  const modes = caps.exposureMode || [];
-  if (!modes.includes('manual') || !caps.exposureTime) {
-    ui.exposureRow.classList.add('hidden');
-    log(`Camera exposure control: not available (modes: ${modes.join(', ') || 'none'})`);
-    return;
-  }
-  ui.exposureRow.classList.remove('hidden');
-  ui.exposureMode.value = 'auto';
-  ui.exposureTime.min = caps.exposureTime.min;
-  ui.exposureTime.max = caps.exposureTime.max;
-  ui.exposureTime.step = caps.exposureTime.step || 1;
-  const current = track.getSettings().exposureTime;
-  ui.exposureTime.value = current ?? caps.exposureTime.min;
-  ui.exposureTime.disabled = true;
-  ui.exposureValue.textContent = ui.exposureTime.value;
-  log(`Camera exposure control available: time ${caps.exposureTime.min}–${caps.exposureTime.max} (step ${caps.exposureTime.step})`);
-}
-
-async function applyExposure() {
-  if (!stream) return;
-  const track = stream.getVideoTracks()[0];
-  const manual = ui.exposureMode.value === 'manual';
-  ui.exposureTime.disabled = !manual;
-  ui.exposureValue.textContent = ui.exposureTime.value;
-  const constraint = manual
-    ? { exposureMode: 'manual', exposureTime: Number(ui.exposureTime.value) }
-    : { exposureMode: 'continuous' };
-  try {
-    await track.applyConstraints({ advanced: [constraint] });
-  } catch (err) {
-    log(`Exposure change failed: ${err.message}`);
-  }
+function savedCameraName() {
+  try { return localStorage.getItem(CAMERA_PREF_KEY); } catch { return null; }
 }
 
 // The SDK and the browser number cameras differently, so the preview finds the same camera by name.
-async function browserDeviceIdFor(sdkCameraName) {
-  if (!sdkCameraName) return null;
+async function browserDeviceIdFor(name) {
+  if (!name) return null;
   let devices = await navigator.mediaDevices.enumerateDevices();
   if (devices.every((d) => !d.label)) {
     const tmp = await navigator.mediaDevices.getUserMedia({ video: true });
     tmp.getTracks().forEach((t) => t.stop());
     devices = await navigator.mediaDevices.enumerateDevices();
   }
-  const want = sdkCameraName.toLowerCase();
+  const want = name.toLowerCase();
   const match = devices.find((d) => d.kind === 'videoinput'
     && (d.label.toLowerCase().includes(want) || want.includes(d.label.toLowerCase().replace(/\s*\([0-9a-f:]+\)$/, ''))));
   return match ? match.deviceId : null;
 }
 
-const CAMERA_PREF_KEY = 'gutcheck.cameraName';
-
-function savedCameraName() {
-  try { return localStorage.getItem(CAMERA_PREF_KEY); } catch { return null; }
-}
-
-// Preview and measurement must always use the same, explicitly named camera,
-// because "default" means different devices to the browser and to the SDK.
 async function refreshCameras() {
   const cams = await bridge.cameras();
-  const wanted = ui.cameraSelect.selectedOptions[0]?.textContent || savedCameraName();
-  ui.cameraSelect.innerHTML = '';
+  const select = $('cameraSelect');
+  const wanted = select.selectedOptions[0]?.textContent || savedCameraName();
+  select.innerHTML = '';
   for (const c of cams) {
     const opt = document.createElement('option');
     opt.value = c.id;
     opt.textContent = c.name || c.id;
-    ui.cameraSelect.appendChild(opt);
+    select.appendChild(opt);
   }
   if (!cams.length) {
     const opt = document.createElement('option');
     opt.value = '';
     opt.textContent = 'No camera found';
-    ui.cameraSelect.appendChild(opt);
+    select.appendChild(opt);
   }
   const match = cams.find((c) => (c.name || c.id) === wanted);
-  if (match) ui.cameraSelect.value = match.id;
-  log(`Cameras found: ${cams.map((c) => c.name || c.id).join(', ') || 'none'}`);
+  if (match) select.value = match.id;
   await applyCameraChoice();
 }
 
 async function applyCameraChoice() {
-  const id = ui.cameraSelect.value;
-  if (!id) return false;
-  const chosen = await bridge.setCamera(id);
-  if (!chosen) return false;
-  const name = ui.cameraSelect.selectedOptions[0].textContent;
-  try { localStorage.setItem(CAMERA_PREF_KEY, name); } catch { /* storage unavailable */ }
-  log(`Camera for preview + measurement: ${name}`);
+  const select = $('cameraSelect');
+  if (!select.value || !(await bridge.setCamera(select.value))) return false;
+  try { localStorage.setItem(CAMERA_PREF_KEY, select.selectedOptions[0].textContent); } catch { /* storage unavailable */ }
   return true;
 }
 
-async function selectCamera() {
-  if (!(await applyCameraChoice())) {
-    log('That camera disappeared. Refreshing the list.');
-    await refreshCameras();
-    return;
-  }
-  if (stream) {
-    await closeCamera();
-    await openCamera();
-  }
-}
-
 async function openCamera() {
-  const sdkName = ui.cameraSelect.selectedOptions[0]?.textContent;
-  const deviceId = ui.cameraSelect.value ? await browserDeviceIdFor(sdkName) : null;
+  closeCamera();
+  const name = $('cameraSelect').selectedOptions[0]?.textContent;
+  const deviceId = $('cameraSelect').value ? await browserDeviceIdFor(name) : null;
   if (!deviceId) {
-    log(`Preview couldn't find "${sdkName}". Pick a camera and try again.`);
+    $('setupPlaceholder').textContent = 'Pick a camera above.';
     return;
   }
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
+    state.stream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, deviceId: { exact: deviceId } },
       audio: false,
     });
   } catch (err) {
-    log(`Camera error: ${err.message}`);
+    $('setupPlaceholder').textContent = `Camera error: ${err.message}`;
     return;
   }
-  const track = stream.getVideoTracks()[0];
-  ui.preview.srcObject = stream;
-  setPlaceholder('');
-  const s = track.getSettings();
-  ui.camInfo.textContent = `${s.width}×${s.height} @ ${Math.round(s.frameRate)} fps requested`;
-  fpsFrames = [];
-  ui.preview.requestVideoFrameCallback(trackPreviewFps);
-  log(`Camera opened: ${track.label}`);
-  setupExposureControls(track);
-  setMode('idle');
+  $('setupVideo').srcObject = state.stream;
+  $('setupPlaceholder').classList.add('hidden');
 }
 
-async function closeCamera() {
-  if (!stream) return;
-  // Hand exposure back to the camera so other apps aren't left with a manual setting.
-  if (ui.exposureMode.value === 'manual') {
-    ui.exposureMode.value = 'auto';
-    await applyExposure();
-  }
-  for (const t of stream.getTracks()) t.stop();
-  stream = null;
-  ui.preview.srcObject = null;
-  setPlaceholder('Camera is off');
-  ui.camFps.textContent = '—';
-  ui.camFps.className = '';
-  ui.camInfo.textContent = '—';
-  ui.exposureRow.classList.add('hidden');
-  log('Camera closed');
-  setMode('idle');
+function closeCamera() {
+  if (!state.stream) return;
+  state.stream.getTracks().forEach((t) => t.stop());
+  state.stream = null;
+  $('setupVideo').srcObject = null;
+  $('setupPlaceholder').textContent = 'Camera is off';
+  $('setupPlaceholder').classList.remove('hidden');
 }
 
-// ---------- Rendering vitals ----------
-
-function setQ(el, m) {
-  el.textContent = m ? `${m.stable ? 'stable' : 'warming up'} · conf ${(m.confidence ?? 0).toFixed(2)}` : '';
-  el.className = `q ${m?.stable ? 'stable' : ''}`;
+function sourceMode() {
+  return document.querySelector('input[name="source"]:checked').value;
 }
 
-function renderVitals() {
-  const { pulse, breathing, hrv, expression } = tracker;
-  ui.vPulse.textContent = pulse?.value != null ? Math.round(pulse.value) : '—';
-  setQ(ui.vPulseQ, pulse);
-  ui.vBreath.textContent = breathing?.value != null ? breathing.value.toFixed(1) : '—';
-  setQ(ui.vBreathQ, breathing);
-  ui.vHrv.textContent = hrv?.rmssd != null ? Math.round(hrv.rmssd) : '—';
-  setQ(ui.vHrvQ, hrv);
-  ui.vStress.textContent = hrv?.baevsky != null ? hrv.baevsky.toFixed(2) : '—';
-  // Expression scores arrive as percentages (they sum to ~100).
-  ui.vExpr.textContent = expression?.top ? `${expression.top} ${Math.round(expression.topScore)}%` : '—';
-  ui.vExprQ.textContent = expression ? (expression.stable ? 'stable' : 'warming up') : '';
-  ui.vExprQ.className = `q ${expression?.stable ? 'stable' : ''}`;
-  ui.vBlinks.textContent = tracker.blinkCount;
-  const mins = (performance.now() - runStartedAt) / 60000;
-  ui.vBlinkRate.textContent = mins > 0.25 ? `${(tracker.blinkCount / mins).toFixed(0)} /min` : '';
-  ui.packets.textContent = tracker.packets;
-}
-
-// ---------- Runs (live or replay) ----------
-
-function attach(src) {
-  src.on('metrics', (buf) => {
-    try {
-      tracker.ingest(buf);
-    } catch (err) {
-      log(`Decode error: ${err.message}`);
-      return;
-    }
-    renderVitals();
-  });
-  src.on('validationStatus', (code, _ts, hint) => {
-    ui.validation.textContent = code === ValidationCode.kOk ? 'OK' : `${nameOf(ValidationCode, code)}${hint ? ' — ' + hint : ''}`;
-  });
-  src.on('processingStatus', (status) => {
-    ui.procStatus.textContent = nameOf(ProcessingStatus, status);
-    log(`Processing status: ${nameOf(ProcessingStatus, status)}`);
-  });
-  src.on('error', (code, message, retryable) => {
-    log(`SDK error ${nameOf(SmartSpectraErrorCode, code)}: ${message} (retryable=${retryable})`);
-    if (src === source && src instanceof LiveSource) {
-      sdkFailed = true;
-      stopRun();
-    }
-  });
-  src.on('fps', (sent, dropped) => {
-    ui.sentFps.textContent = dropped ? `${sent} (+${dropped} dropped)` : String(sent);
-  });
-  src.on('ended', () => log('Run ended'));
-}
-
-function beginRun(src, mode) {
-  source = src;
-  tracker.reset();
-  ui.validation.textContent = '—';
-  ui.procStatus.textContent = '—';
-  ui.sentFps.textContent = '—';
-  runStartedAt = performance.now();
-  renderVitals();
-  clockTimer = setInterval(() => {
-    const sec = Math.floor((performance.now() - runStartedAt) / 1000);
-    ui.elapsed.textContent = `${sec} s`;
-    if (mode === 'live') {
-      ui.credits.textContent = Math.ceil(sec / 30);
-      ui.recTime.textContent = formatClock(sec);
-      if (!livePreviewSeen && sec >= 15) setPlaceholder('Measuring… (live preview not available from this camera)');
-    }
-    renderVitals();
-  }, 500);
-  setMode(mode);
-  attach(src);
-}
-
-async function startLive() {
-  if (stream && measuredFps < MIN_FPS
-      && !confirm(`The camera check shows ${measuredFps.toFixed(1)} fps (needs ${MIN_FPS}+). The SDK will likely stop early. Start anyway?`)) {
-    return;
-  }
-  if (!(await applyCameraChoice())) {
-    log('No camera selected for measurement. Pick one from the list.');
-    return;
-  }
-  const cameraName = ui.cameraSelect.selectedOptions[0].textContent;
-  // The SDK opens the camera itself in the main process, so the preview must let go of it first.
-  reopenPreviewAfterRun = !!stream;
-  await closeCamera();
-  livePreviewSeen = false;
-  setPlaceholder('Starting measurement…');
-  ui.recTime.textContent = '0:00';
-  ui.recBadge.classList.remove('hidden');
-  const src = new LiveSource(bridge, {
-    mode: 'live',
-    capture: 'native',
-    requestedMetrics: REQUESTED_METRICS,
-    camera: { ...info.capture, name: cameraName },
-    previewFps: measuredFps || null,
-  });
-  log(`Measuring with: ${cameraName}`);
-  beginRun(src, 'live');
-  ui.credits.textContent = '0';
-  // Count the auto-stop from when measuring actually begins; SDK startup takes several seconds.
-  const seconds = Number(ui.duration.value);
-  const SAFETY_SECONDS = 30;
-  autoStopTimer = setTimeout(() => {
-    log(`Auto-stop: measurement never started within ${SAFETY_SECONDS} s`);
-    stopRun();
-  }, SAFETY_SECONDS * 1000);
-  src.on('processingStatus', (status) => {
-    if (status !== ProcessingStatus.kRunning || src !== source) return;
-    clearTimeout(autoStopTimer);
-    runStartedAt = performance.now();
-    autoStopTimer = setTimeout(() => {
-      log(`Auto-stop after ${seconds} s of measuring`);
-      stopRun();
-    }, seconds * 1000);
-  });
-  log(`Live test started (auto-stop ${seconds} s after measuring begins)`);
-  try {
-    await src.start();
-  } catch (err) {
-    log(`Start failed: ${err.message}${err.code != null ? ` (code ${nameOf(SmartSpectraErrorCode, err.code)})` : ''}`);
-    sdkFailed = true;
-    await stopRun();
-  }
-}
-
-async function checkDevice() {
-  ui.checkDevice.disabled = true;
-  log('Device check running…');
-  const res = await bridge.readiness();
-  if (res.ok) {
-    log(`Device check: ${res.result.verdict.toUpperCase()} — ${res.result.reason}`);
-  } else {
-    log(`Device check failed: ${res.error.message}${res.error.code != null ? ` (code ${nameOf(SmartSpectraErrorCode, res.error.code)})` : ''}`);
-    await bridge.destroy();
-  }
-  setMode('idle');
-}
-
-async function startReplay() {
-  const name = ui.recordings.value;
-  if (!name) return;
-  const text = await window.gutCheck.readRecording(name);
-  const src = new ReplaySource(text, Number(ui.speed.value));
-  beginRun(src, 'replay');
-  src.on('ended', () => finishRun());
-  log(`Replaying ${name} at ${ui.speed.value}× (${Math.round(src.durationMs / 1000)} s recorded)`);
-  await src.start();
-}
-
-let stopping = false;
-async function stopRun() {
-  if (!source || stopping) return;
-  stopping = true;
-  clearTimeout(autoStopTimer);
-  const src = source;
-  try {
-    await src.stop();
-  } catch (err) {
-    log(`Stop error: ${err.message}`);
-  }
-  if (src instanceof LiveSource && src.lines.length > 1) {
-    const saved = await window.gutCheck.saveRecording(src.recordingText());
-    log(`Recording saved: recordings/${saved}`);
-    await refreshRecordings(saved);
-  }
-  if (sdkFailed) {
-    await bridge.destroy();
-    sdkFailed = false;
-    log('SDK reset after error. You can try again.');
-  }
-  stopping = false;
-  finishRun();
-}
-
-function finishRun() {
-  if (!source) return;
-  const { pulse, breathing, hrv, expression } = tracker;
-  log(`Summary: packets ${tracker.packets} · pulse ${pulse?.value?.toFixed(1) ?? 'none'} · breathing ${breathing?.value?.toFixed(1) ?? 'none'}`
-    + ` · HRV ${hrv?.rmssd != null ? Math.round(hrv.rmssd) + ' ms' : 'none'} · stress ${hrv?.baevsky != null ? hrv.baevsky.toFixed(2) : 'none'}`
-    + ` · expression ${expression?.top ?? 'none'} · blinks ${tracker.blinkCount}`);
-  clearInterval(clockTimer);
-  const wasLive = source instanceof LiveSource;
-  source = null;
-  setMode('idle');
-  if (wasLive) {
-    ui.recBadge.classList.add('hidden');
-    ui.liveCanvas.classList.add('hidden');
-    setPlaceholder('Camera is off');
-    if (reopenPreviewAfterRun) {
-      reopenPreviewAfterRun = false;
-      openCamera();
-    }
-  }
-}
-
-async function refreshRecordings(select) {
-  const names = await window.gutCheck.listRecordings();
-  ui.recordings.innerHTML = '';
+async function refreshDemoRecordings() {
+  const names = (await window.gutCheck.listRecordings()).filter((n) => n !== 'synthetic-test.jsonl');
+  const select = $('demoRecording');
+  select.innerHTML = '';
   for (const n of names) {
     const opt = document.createElement('option');
     opt.value = n;
-    opt.textContent = n;
-    ui.recordings.appendChild(opt);
+    opt.textContent = n.replace('session-', 'Recording ').replace('.jsonl', '');
+    select.appendChild(opt);
   }
-  if (!names.length) {
-    const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = 'No recordings yet';
-    ui.recordings.appendChild(opt);
-  }
-  if (select) ui.recordings.value = select;
-  setMode(source ? ui.modeChip.textContent : 'idle');
 }
 
-// ---------- Wire up ----------
+async function updateSourceUi() {
+  const demo = sourceMode() === 'demo';
+  $('demoOptions').classList.toggle('hidden', !demo);
+  if (demo) {
+    closeCamera();
+    $('setupPlaceholder').textContent = 'Demo mode: no camera needed';
+  } else {
+    await openCamera();
+  }
+}
 
-ui.copyLog.onclick = copyLog;
-ui.cameraSelect.onchange = selectCamera;
-ui.refreshCameras.onclick = refreshCameras;
-ui.openCam.onclick = openCamera;
-ui.closeCam.onclick = closeCamera;
-ui.exposureMode.onchange = applyExposure;
-ui.exposureTime.oninput = applyExposure;
-ui.startLive.onclick = startLive;
-ui.stopRun.onclick = stopRun;
-ui.checkDevice.onclick = checkDevice;
-ui.startReplay.onclick = startReplay;
-ui.refreshRecordings.onclick = () => refreshRecordings();
+async function enterSetup() {
+  const plan = buildPlan(state.options);
+  const minutes = plannedDurationMs(plan) / 60000;
+  $('liveCost').textContent = `About ${Math.ceil(minutes)} minutes · uses ~${Math.ceil((minutes * 60) / 30)} Presage credits`;
+  $('setupError').classList.add('hidden');
+  await refreshCameras();
+  await refreshDemoRecordings();
+  await updateSourceUi();
+}
+
+$('cameraSelect').onchange = async () => { await applyCameraChoice(); if (sourceMode() === 'live') await openCamera(); };
+$('refreshCameras').onclick = async () => { await refreshCameras(); if (sourceMode() === 'live') await openCamera(); };
+document.querySelectorAll('input[name="source"]').forEach((r) => { r.onchange = updateSourceUi; });
+
+function setupError(msg) {
+  $('setupError').textContent = msg;
+  $('setupError').classList.remove('hidden');
+}
+
+// ---------- Session ----------
+
+const thumbCtx = $('thumbCanvas').getContext('2d');
+
+bridge.onPreview((pixels, width, height) => {
+  if (!(state.source instanceof LiveSource)) return;
+  const canvas = $('thumbCanvas');
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  thumbCtx.putImageData(new ImageData(new Uint8ClampedArray(pixels.buffer, pixels.byteOffset, pixels.byteLength), width, height), 0, 0);
+});
+
+function buildPhaseBar(plan) {
+  const bar = $('phaseBar');
+  bar.innerHTML = '';
+  for (const p of plan.phases) {
+    const seg = document.createElement('div');
+    seg.className = `seg ${p.kind}`;
+    seg.style.flexGrow = String(Math.round((p.durationMs || plan.timing.settleMinMs) / 1000));
+    seg.appendChild(document.createElement('i'));
+    bar.appendChild(seg);
+  }
+}
+
+function phaseTitle(phase) {
+  if (phase.kind !== 'option') return PHASE_NAMES[phase.kind];
+  const n = state.plan.order.indexOf(phase.optionIndex) + 1;
+  return `Option ${n} of ${state.plan.order.length}`;
+}
+
+let lastPrompt = '';
+function showPrompt(text) {
+  if (text === lastPrompt) return;
+  lastPrompt = text;
+  const el = $('prompt');
+  el.classList.add('fade');
+  setTimeout(() => { el.textContent = text; el.classList.remove('fade'); }, 300);
+}
+
+function onPhase(phase, index) {
+  console.log(`Phase ${index}: ${phase.kind}${phase.kind === 'option' ? ` (${state.plan.options[phase.optionIndex].label})` : ''} at ${state.runner.now()} ms`);
+  $('phaseLabel').textContent = phaseTitle(phase);
+  $('settleChecks').classList.toggle('hidden', phase.kind !== 'settle');
+  const title = $('optionTitle');
+  if (phase.kind === 'option') {
+    title.textContent = state.plan.options[phase.optionIndex].label;
+    title.classList.remove('hidden');
+  } else {
+    title.classList.add('hidden');
+  }
+  const segs = $('phaseBar').children;
+  for (let i = 0; i < segs.length; i++) segs[i].firstChild.style.width = i < index ? '100%' : '0';
+}
+
+function onTick(s) {
+  showPrompt(s.prompt);
+  const seg = $('phaseBar').children[s.phaseIndex];
+  const total = s.phase.durationMs || state.plan.timing.settleMinMs;
+  seg.firstChild.style.width = `${Math.min(100, (s.elapsedMs / total) * 100)}%`;
+  $('phaseClock').textContent = s.remainingMs != null ? `${Math.ceil(s.remainingMs / 1000)} s` : '';
+
+  if (s.readiness) {
+    $('chkFrames').classList.toggle('ok', s.readiness.framesOk);
+    $('chkFace').classList.toggle('ok', s.readiness.faceOk);
+    $('chkPulse').classList.toggle('ok', s.readiness.pulseOk);
+  }
+  const hint = s.validationCode ? GUIDANCE[s.validationCode] : null;
+  const settleHint = s.settleTooLong && !hint ? 'Still waiting for a steady signal. Check lighting and keep still.' : null;
+  $('guidance').textContent = hint || settleHint || '';
+  $('guidance').classList.toggle('hidden', !(hint || settleHint));
+}
+
+async function beginSession() {
+  const demo = sourceMode() === 'demo';
+  let source;
+  let speed = 1;
+
+  if (demo) {
+    const name = $('demoRecording').value;
+    if (!name) return setupError('No recordings yet. Do a live session first (or use the Signal Lab).');
+    speed = Number($('demoSpeed').value);
+    source = new ReplaySource(await window.gutCheck.readRecording(name), { speed, loop: true });
+  } else {
+    if (!state.info.hasKey) return setupError('No Presage API key found. Add PRESAGE_API_KEY to the .env file and restart.');
+    // The SDK opens the camera itself, so the preview has to let go of it first.
+    if (!(await applyCameraChoice())) return setupError('Pick a camera first.');
+    closeCamera();
+    source = new LiveSource(bridge, window.gutCheck.recording, {
+      mode: 'gutcheck',
+      requestedMetrics: REQUESTED_METRICS,
+      camera: { name: $('cameraSelect').selectedOptions[0].textContent },
+    });
+  }
+
+  const plan = buildPlan(state.options);
+  const runner = new SessionRunner(plan, source, { speed, demo });
+  Object.assign(state, { source, runner, plan, demo });
+
+  runner.on('phase', onPhase);
+  runner.on('tick', onTick);
+  runner.on('done', (result) => finishSession(result));
+  source.on('error', (code, message) => {
+    if (demo) return;
+    endWithError(`The measurement stopped: ${message} (${nameOf(SmartSpectraErrorCode, code)})`);
+  });
+
+  buildPhaseBar(plan);
+  lastPrompt = '';
+  $('prompt').textContent = demo ? 'Loading recorded data…' : 'Starting the camera…';
+  $('phaseLabel').textContent = 'Starting…';
+  $('phaseClock').textContent = '';
+  $('optionTitle').classList.add('hidden');
+  $('settleChecks').classList.add('hidden');
+  $('guidance').classList.add('hidden');
+  $('thumbCanvas').classList.toggle('hidden', demo);
+  $('thumbBadge').textContent = demo ? `DEMO ${speed}×` : '● REC';
+  $('thumbBadge').classList.toggle('demo', demo);
+  go('session');
+
+  try {
+    await source.start();
+  } catch (err) {
+    await endWithError(`Couldn't start the measurement: ${err.message}`);
+  }
+}
+
+$('beginSession').onclick = beginSession;
+
+const nameOf = (table, value) => Object.keys(table).find((k) => table[k] === value) || String(value);
+
+let finishing = false;
+
+async function stopSource() {
+  const { source } = state;
+  if (!source) return;
+  try { await source.stop(); } catch { /* already stopped */ }
+}
+
+async function endWithError(message) {
+  if (finishing) return;
+  finishing = true;
+  state.runner?.abort();
+  await stopSource();
+  if (!state.demo) await bridge.destroy();
+  finishing = false;
+  state.source = null;
+  go('setup');
+  setupError(message);
+}
+
+$('stopSession').onclick = async () => {
+  if (!confirm('Stop this session? You will see results for the parts you finished.')) return;
+  const result = state.runner?.abort();
+  if (!result) {
+    await stopSource();
+    state.source = null;
+    go('setup');
+  }
+};
+
+async function finishSession(result) {
+  if (finishing) return;
+  finishing = true;
+  await stopSource();
+  const recordingName = state.source?.recordingName;
+  const sessionName = await window.gutCheck.saveSession(JSON.stringify({ ...result, recording: recordingName || null }));
+  state.source = null;
+  finishing = false;
+  renderResults(result, sessionName, recordingName);
+  go('results');
+}
+
+// ---------- Results (raw numbers; the Body Vote comes in Phase 3) ----------
+
+function fmtChange(v, digits, unit) {
+  if (v == null || Number.isNaN(v)) return { text: '—', cls: '' };
+  if (Math.abs(v) < 0.5 * 10 ** -digits) return { text: `0${unit}`, cls: '' };
+  const sign = v > 0 ? '+' : '';
+  return { text: `${sign}${v.toFixed(digits)}${unit}`, cls: v > 0 ? 'up' : v < 0 ? 'down' : '' };
+}
+
+function biggestExpressionShift(change) {
+  const top = Object.entries(change).filter(([, v]) => v != null).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
+  return top ? fmtChange(top[1], 0, ` ${top[0]}`) : { text: '—', cls: '' };
+}
+
+function cell(row, content, cls = '') {
+  const td = document.createElement('td');
+  td.textContent = content;
+  if (cls) td.className = cls;
+  row.appendChild(td);
+}
+
+function renderResults(result, sessionName, recordingName) {
+  const a = analyzeSession(result);
+  console.log(`Session done (completed=${result.completed}): baseline pulse ${a.baseline.pulse?.toFixed(1)}, breathing ${a.baseline.breathing?.toFixed(1)}, blinks/min ${a.baseline.blinksPerMin?.toFixed(1)} · `
+    + a.options.map((o) => `${o.label}: pulse ${o.change.pulse?.toFixed(1)}, breathing ${o.change.breathing?.toFixed(1)}, blinks ${o.change.blinksPerMin?.toFixed(1)}`).join(' · ')
+    + ` · series sizes ${Object.entries(result.series).map(([k, v]) => `${k}=${v.length}`).join(' ')} · saved ${sessionName}`);
+  $('resultsTitle').textContent = result.completed ? 'How your body reacted' : 'Partial results';
+  $('resultsNote').textContent = `Each option compared with your own calm baseline (pulse ${a.baseline.pulse?.toFixed(0) ?? '—'} bpm, `
+    + `breathing ${a.baseline.breathing?.toFixed(1) ?? '—'}/min, ${a.baseline.blinksPerMin?.toFixed(0) ?? '—'} blinks/min). `
+    + 'Orange = more aroused than baseline, green = calmer. The Body Vote verdict is the next step of the build.';
+
+  const table = document.createElement('table');
+  table.className = 'results';
+  const head = table.createTHead().insertRow();
+  for (const h of ['Option', 'Pulse', 'Breathing', 'Blinks', 'Biggest expression shift']) {
+    const th = document.createElement('th');
+    th.textContent = h;
+    head.appendChild(th);
+  }
+  const body = table.createTBody();
+  for (const o of a.options) {
+    const row = body.insertRow();
+    cell(row, o.label);
+    const p = fmtChange(o.change.pulse, 1, ' bpm');
+    cell(row, p.text, `num ${p.cls}`);
+    const b = fmtChange(o.change.breathing, 1, ' /min');
+    cell(row, b.text, `num ${b.cls}`);
+    const k = fmtChange(o.change.blinksPerMin, 0, ' /min');
+    cell(row, k.text, `num ${k.cls}`);
+    const e = biggestExpressionShift(o.change.expression);
+    cell(row, e.text, 'num');
+  }
+  if (!a.options.length) {
+    const row = body.insertRow();
+    cell(row, 'The session ended before any option was measured.');
+  }
+  $('resultsTable').innerHTML = '';
+  $('resultsTable').appendChild(table);
+
+  const hrv = a.sessionHrv ? ` Session HRV: ${Math.round(a.sessionHrv.rmssd)} ms RMSSD.` : '';
+  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}Saved: sessions/${sessionName}`
+    + `${recordingName ? ` · recordings/${recordingName}` : ''}.${hrv}`;
+}
+
+$('newSession').onclick = () => {
+  state.options = [{ label: '', detail: '' }, { label: '', detail: '' }];
+  $('consentBox').checked = false;
+  $('consentNext').disabled = true;
+  go('welcome');
+};
+
+// ---------- Start ----------
 
 (async () => {
-  info = await bridge.info();
-  ui.keyWarning.classList.toggle('hidden', info.hasKey);
-  await refreshRecordings();
-  log(`Ready. SDK ${info.version}. API key ${info.hasKey ? 'loaded' : 'MISSING'}.`);
-  await refreshCameras();
+  state.info = await bridge.info();
   const auto = await window.gutCheck.getAutoReplay();
+  // Dev/testing hook: run a full demo session automatically with sample options.
   if (auto) {
-    ui.recordings.value = auto;
-    ui.speed.value = '10';
-    await startReplay();
+    state.options = [{ label: 'Stay in my city', detail: '' }, { label: 'Move for the new job', detail: 'higher salary' }];
+    document.querySelector('input[name="source"][value="demo"]').checked = true;
+    await go('setup');
+    $('demoRecording').value = auto;
+    $('demoSpeed').value = '20';
+    await beginSession();
   }
 })();

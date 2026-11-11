@@ -162,6 +162,8 @@ video, #liveCanvas {
 .badge.ok { background: rgba(62, 207, 142, 0.15); color: var(--ok); }
 
 .muted { color: var(--muted); }
+.back { color: var(--muted); text-decoration: none; margin-right: 8px; }
+.back:hover { color: var(--accent); }
 .good { color: var(--ok); }
 .bad { color: var(--err); }
 #exposureTime { flex: 1; min-width: 120px; }

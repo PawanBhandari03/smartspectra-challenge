@@ -31,6 +31,28 @@ When people can't decide ("Should I stay in my city or move for the new job?"), 
 7. **Body Vote:** results per option compared to baseline, a verdict ("Your body leaned toward A" / "Too close to call" / "Not enough clear signal"), a timeline chart and reflection questions.
 8. **Saved locally:** numbers only (never video), so you can compare sessions later.
 
+### The session timeline (as built)
+
+One continuous measurement, about 6 minutes for 2 options:
+
+| Phase | Length | What happens | Scored? |
+|---|---|---|---|
+| Settle | ≥ 20 s | Waits until the SDK confirms 25+ frames/s, face OK and a pulse | No |
+| Calm baseline | 75 s | Neutral visualization (making tea), read silently | Baseline |
+| Option (random order) | 75 s each | 5 guided prompts, one every 15 s | Yes |
+| Reset | 20 s after each option | "Let that go" | No |
+| End baseline | 60 s | Neutral visualization (a quiet walk) | Baseline (corrects drift) |
+
+The baseline uses the **same kind of task** as the options (reading + picturing), so differences come from the choice itself, not from "staring" vs "imagining". The two baselines are averaged, which also cancels slow drift (people usually relax over a session).
+
+Because the SDK reports rolling averages, scoring skips the start of each phase: ~15 s for pulse, ~30 s for breathing (`src/core/analysis.js`).
+
+Each session saves:
+- `recordings/session-*.jsonl`: every raw SDK event + phase markers (written every 2 s, so a crash loses almost nothing)
+- `sessions/gutcheck-*.json`: options, phase timings and the full vitals time series, so scoring can be improved later without re-recording
+
+**Demo mode:** the app can run a whole session from a saved recording (free, no camera), at 1×, 5× or 20× speed.
+
 ## 4. How a webcam measures the body
 
 We do **not** calculate vitals ourselves. The **Presage SmartSpectra SDK** does that and hands us numbers several times a second.
@@ -142,12 +164,18 @@ smartspectra-challenge/
 ├── src/
 │   ├── main/main.js   ← Electron main process: window, the SDK + camera, API key, saving recordings
 │   ├── preload/       ← secure bridge: window.gutCheck (SDK controls, events, recordings)
-│   ├── renderer/      ← screens: index.html, styles.css, app.js
+│   ├── renderer/
+│   │   ├── index.html, app.js, app.css ← the Gut Check app (welcome → options → consent → camera → session → results)
+│   │   └── lab.html, lab.js, lab.css   ← Signal Lab: developer test page (link bottom-right of the welcome screen)
 │   └── core/
-│       ├── sources.js ← LiveSource (real SDK) and ReplaySource (saved file): same events
-│       └── vitals.js  ← decodes SDK packets → pulse, breathing, HRV, expression, blinks
+│       ├── sources.js  ← LiveSource (real SDK, streams the recording to disk) and ReplaySource (saved file, can loop)
+│       ├── vitals.js   ← decodes SDK packets → pulse, breathing, HRV, expression, blinks
+│       ├── session.js  ← the session plan (phases, prompts) and the runner that collects the time series
+│       ├── analysis.js ← per-phase numbers vs baseline (plain function of the saved session JSON)
+│       └── metrics.js  ← which SDK metrics we request
 ├── dist/              ← generated bundles (not committed)
-└── recordings/        ← saved sessions for replay mode (not committed: personal data)
+├── recordings/        ← raw recordings for replay/demo mode (not committed: personal data)
+└── sessions/          ← Gut Check session results (not committed: personal data)
 ```
 
 ## 9. Privacy
@@ -165,6 +193,8 @@ smartspectra-challenge/
 | 2026-11-11 | Installed Electron 45, SDK 3.5, dotenv, esbuild. Built the **Signal Lab** test screen: camera preview + free fps check, live test with hard auto-stop, live vitals panel, automatic recording, and replay mode. Verified decoding with fake packets and that the app launches. No credits used yet. |
 | 2026-11-11 | **First live test** (~1 credit): API key works; expressions, blinks and breathing waveform arrive. But only 10 frames/s reached the SDK (camera gave 20 in dim light), so it stopped after ~10 s. Moved the SDK camera into the main process, added a device check, a manual-exposure experiment, and an fps warning before starting. Fixed expression % display (scores are already percentages). |
 | 2026-11-11 | Added a camera picker. **Second live test** with the phone camera (Samsung S21 Ultra via Windows Phone Link), 90 s, ~3 credits: **steady 30 fps, all signals arrived.** See "What real data taught us" below. |
+| 2026-11-11 | Live preview during measurement (SDK frames, REC badge), one explicitly chosen camera for preview + measurement, auto-stop counted from when measuring starts, copy-log icon. |
+| 2026-11-11 | **Phase 2:** the real Gut Check app: welcome, options, consent, camera check, the full guided session (settle → baseline → options in random order with resets → end baseline) with progress bar, prompts, guidance hints and a small live thumbnail, and a first results table. Demo mode runs a whole session from a recording. Signal Lab moved to its own page. Verified with automated demo sessions + screenshots. |
 
 ## What real data taught us (Nov 11 live test)
 

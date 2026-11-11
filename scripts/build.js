@@ -3,18 +3,19 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 
+const page = (name) => esbuild.build({
+  entryPoints: [path.join(root, `src/renderer/${name}.js`)],
+  outfile: path.join(root, `dist/${name}.js`),
+  bundle: true,
+  platform: 'browser',
+  format: 'iife',
+  sourcemap: 'inline',
+  logLevel: 'warning',
+});
+
 Promise.all([
-  esbuild.build({
-    entryPoints: [path.join(root, 'src/renderer/app.js')],
-    outfile: path.join(root, 'dist/renderer.js'),
-    bundle: true,
-    platform: 'browser',
-    format: 'iife',
-    sourcemap: 'inline',
-    logLevel: 'warning',
-  }),
-  // Sandboxed preloads can only require('electron'), so the SDK's preload
-  // bridge has to be bundled in rather than required at runtime.
+  page('app'),
+  page('lab'),
   esbuild.build({
     entryPoints: [path.join(root, 'src/preload/preload.js')],
     outfile: path.join(root, 'dist/preload.js'),

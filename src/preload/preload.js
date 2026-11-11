@@ -18,7 +18,11 @@ contextBridge.exposeInMainWorld('gutCheck', {
       ipcRenderer.on('sdk:event', (_e, name, ...args) => callback(name, ...args));
     },
   },
-  saveRecording: (text) => ipcRenderer.invoke('gutcheck:saveRecording', text),
+  recording: {
+    begin: () => ipcRenderer.invoke('recording:begin'),
+    append: (name, text) => ipcRenderer.invoke('recording:append', name, text),
+  },
+  saveSession: (json) => ipcRenderer.invoke('session:save', json),
   listRecordings: () => ipcRenderer.invoke('gutcheck:listRecordings'),
   readRecording: (name) => ipcRenderer.invoke('gutcheck:readRecording', name),
   getAutoReplay: () => ipcRenderer.invoke('gutcheck:getAutoReplay'),

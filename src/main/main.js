@@ -132,12 +132,27 @@ function safeRecordingPath(name) {
   return path.join(recordingsDir, base);
 }
 
-ipcMain.handle('gutcheck:saveRecording', (_e, text) => {
+const timestamp = () => new Date().toISOString().replace(/[:.]/g, '-');
+
+ipcMain.handle('recording:begin', () => {
   fs.mkdirSync(recordingsDir, { recursive: true });
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const file = path.join(recordingsDir, `session-${stamp}.jsonl`);
-  fs.writeFileSync(file, text, 'utf8');
-  return path.basename(file);
+  const name = `session-${timestamp()}.jsonl`;
+  fs.writeFileSync(path.join(recordingsDir, name), '', 'utf8');
+  return name;
+});
+
+ipcMain.handle('recording:append', (_e, name, text) => {
+  fs.appendFileSync(safeRecordingPath(name), String(text), 'utf8');
+});
+
+// Gut Check session results: options, phase timings and the full vitals time series.
+const sessionsDir = path.join(appRoot, 'sessions');
+
+ipcMain.handle('session:save', (_e, json) => {
+  fs.mkdirSync(sessionsDir, { recursive: true });
+  const name = `gutcheck-${timestamp()}.json`;
+  fs.writeFileSync(path.join(sessionsDir, name), String(json), 'utf8');
+  return name;
 });
 
 ipcMain.handle('gutcheck:listRecordings', () => {
@@ -170,6 +185,18 @@ function createWindow() {
   });
 
   win.loadFile(path.join(appRoot, 'src/renderer/index.html'));
+
+  // Dev/testing hook: GUTCHECK_SHOTS=<folder> saves a screenshot of the window every 2 s.
+  const shotsDir = process.env.GUTCHECK_SHOTS;
+  if (shotsDir) {
+    fs.mkdirSync(shotsDir, { recursive: true });
+    let n = 0;
+    const timer = setInterval(async () => {
+      if (win.isDestroyed()) return clearInterval(timer);
+      const img = await win.webContents.capturePage();
+      fs.writeFileSync(path.join(shotsDir, `shot-${String(n++).padStart(3, '0')}.png`), img.toPNG());
+    }, 2000);
+  }
 }
 
 app.whenReady().then(createWindow);
