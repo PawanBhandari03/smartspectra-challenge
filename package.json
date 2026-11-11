@@ -1,0 +1,12 @@
+{
+  "name": "gut-check",
+  "version": "0.1.0",
+  "description": "Your body votes on your decisions. A webcam-based desktop app built with the Presage SmartSpectra SDK.",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Pawan Bhandari",
+  "license": "MIT",
+  "private": true
+}
