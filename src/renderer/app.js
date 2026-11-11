@@ -33,6 +33,7 @@ const ui = {
 let apiKey = '';
 let stream = null;
 let sdk = null;
+let sdkFailed = false;
 let source = null;
 let runStartedAt = 0;
 let autoStopTimer = null;
@@ -152,7 +153,10 @@ function attach(src) {
   });
   src.on('error', (code, message, retryable) => {
     log(`SDK error ${nameOf(SmartSpectraErrorCode, code)}: ${message} (retryable=${retryable})`);
-    if (src === source && src instanceof LiveSource) stopRun();
+    if (src === source && src instanceof LiveSource) {
+      sdkFailed = true;
+      stopRun();
+    }
   });
   src.on('fps', (sent, dropped) => {
     ui.sentFps.textContent = dropped ? `${sent} (+${dropped} dropped)` : String(sent);
@@ -199,6 +203,7 @@ async function startLive() {
     await src.start();
   } catch (err) {
     log(`Start failed: ${err.message}${err.code != null ? ` (code ${nameOf(SmartSpectraErrorCode, err.code)})` : ''}`);
+    sdkFailed = true;
     await stopRun();
   }
 }
@@ -230,11 +235,23 @@ async function stopRun() {
     log(`Recording saved: recordings/${saved}`);
     await refreshRecordings(saved);
   }
+  // After an error the SDK sits in its error state; a fresh instance is the reliable way to retry.
+  if (sdkFailed && sdk) {
+    sdk.destroy();
+    sdk = null;
+    sdkFailed = false;
+    log('SDK reset after error. You can try again.');
+  }
   stopping = false;
   finishRun();
 }
 
 function finishRun() {
+  if (!source) return;
+  const { pulse, breathing, hrv, expression } = tracker;
+  log(`Summary: packets ${tracker.packets} · pulse ${pulse?.value?.toFixed(1) ?? 'none'} · breathing ${breathing?.value?.toFixed(1) ?? 'none'}`
+    + ` · HRV ${hrv?.rmssd != null ? Math.round(hrv.rmssd) + ' ms' : 'none'} · stress ${hrv?.baevsky != null ? Math.round(hrv.baevsky) : 'none'}`
+    + ` · expression ${expression?.top ?? 'none'} · blinks ${tracker.blinkCount}`);
   clearInterval(clockTimer);
   source = null;
   setMode('idle');
@@ -273,4 +290,10 @@ ui.refreshRecordings.onclick = () => refreshRecordings();
   ui.keyWarning.classList.toggle('hidden', !!apiKey);
   await refreshRecordings();
   log(`Ready. SDK ${SmartSpectraSDK.version}. API key ${apiKey ? 'loaded' : 'MISSING'}.`);
+  const auto = await window.gutCheck.getAutoReplay();
+  if (auto) {
+    ui.recordings.value = auto;
+    ui.speed.value = '10';
+    await startReplay();
+  }
 })();

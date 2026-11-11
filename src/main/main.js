@@ -16,6 +16,9 @@ function safeRecordingPath(name) {
 
 ipcMain.handle('gutcheck:getApiKey', () => process.env.PRESAGE_API_KEY || '');
 
+// Dev/testing hook: GUTCHECK_AUTOREPLAY=<recording file> replays it at 10x on launch.
+ipcMain.handle('gutcheck:getAutoReplay', () => process.env.GUTCHECK_AUTOREPLAY || '');
+
 ipcMain.handle('gutcheck:saveRecording', (_e, text) => {
   fs.mkdirSync(recordingsDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
