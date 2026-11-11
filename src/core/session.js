@@ -6,7 +6,8 @@ const RUNNING = 3; // ProcessingStatus.kRunning
 
 const TIMING = {
   settleMinMs: 20000,
-  settleWarnMs: 60000,
+  settleWarnMs: 45000,
+  settleMaxMs: 90000,
   baselineMs: 75000,
   optionMs: 75000,
   resetMs: 20000,
@@ -86,7 +87,9 @@ class Emitter {
 
 // Walks through the plan's phases on its own clock (sped up in demo mode) and collects the raw
 // time series. The clock starts when the SDK reports Running. Events:
-//   phase(phase, index) · tick(state) · done(result)
+//   phase(phase, index) · tick(state) · settleFailed(readiness) · done(result)
+// Both the settle phase and the whole session have hard time limits, so a live session can never
+// keep spending credits indefinitely.
 class SessionRunner extends Emitter {
   constructor(plan, source, { speed = 1, demo = false } = {}) {
     super();
@@ -152,13 +155,24 @@ class SessionRunner extends Emitter {
 
   _tick() {
     const p = this.phase;
+    const { timing } = this.plan;
     const elapsed = this.now() - this.phaseTimes[this.phaseIndex].startMs;
     let readiness = null;
 
+    if (this.now() > plannedDurationMs(this.plan) - timing.settleMinMs + timing.settleMaxMs + 60000) {
+      this.finish();
+      return;
+    }
+
     if (p.kind === 'settle') {
       readiness = this.readiness();
-      if (elapsed >= this.plan.timing.settleMinMs && readiness.ready) {
+      if (elapsed >= timing.settleMinMs && readiness.ready) {
         this._enter(this.phaseIndex + 1);
+        return;
+      }
+      if (elapsed >= timing.settleMaxMs) {
+        clearInterval(this._timer);
+        this.emit('settleFailed', readiness);
         return;
       }
     } else if (elapsed >= p.durationMs) {
@@ -178,7 +192,7 @@ class SessionRunner extends Emitter {
       remainingMs: p.durationMs ? Math.max(0, p.durationMs - elapsed) : null,
       prompt: p.prompts[promptIndex],
       readiness,
-      settleTooLong: p.kind === 'settle' && elapsed >= this.plan.timing.settleWarnMs,
+      settleTooLong: p.kind === 'settle' && elapsed >= timing.settleWarnMs,
       validationCode: this.lastValidation?.code ?? null,
     });
   }

@@ -1,4 +1,4 @@
-const { SmartSpectraErrorCode } = require('@smartspectra/node-sdk/renderer');
+const { SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { buildPlan, plannedDurationMs, SessionRunner } = require('../core/session');
 const { analyzeSession } = require('../core/analysis');
@@ -211,7 +211,9 @@ async function refreshDemoRecordings() {
   for (const n of names) {
     const opt = document.createElement('option');
     opt.value = n;
-    opt.textContent = n.replace('session-', 'Recording ').replace('.jsonl', '');
+    const m = n.match(/session-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/);
+    const date = m ? new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`) : null;
+    opt.textContent = date ? `Recording ${date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : n;
     select.appendChild(opt);
   }
 }
@@ -347,9 +349,22 @@ async function beginSession() {
   runner.on('phase', onPhase);
   runner.on('tick', onTick);
   runner.on('done', (result) => finishSession(result));
+  runner.on('settleFailed', (r) => {
+    const missing = [
+      !r.framesOk && 'the camera wasn\'t steady at 25+ frames per second (check lighting)',
+      !r.faceOk && 'your face wasn\'t clearly visible',
+      !r.pulseOk && 'no pulse could be read yet',
+    ].filter(Boolean);
+    endWithError(`We couldn't get a steady signal in 90 seconds, so the measurement was stopped to save credits: ${missing.join('; ') || 'unknown reason'}.`);
+  });
+  // Errors are only fatal once the SDK actually stops (status kError); some are recoverable.
+  let lastError = '';
   source.on('error', (code, message) => {
-    if (demo) return;
-    endWithError(`The measurement stopped: ${message} (${nameOf(SmartSpectraErrorCode, code)})`);
+    lastError = `${message} (${nameOf(SmartSpectraErrorCode, code)})`;
+    console.log(`SDK error: ${lastError}`);
+  });
+  source.on('processingStatus', (status) => {
+    if (!demo && status === ProcessingStatus.kError) endWithError(`The measurement stopped: ${lastError || 'unknown error'}`);
   });
 
   buildPhaseBar(plan);
@@ -387,12 +402,16 @@ async function stopSource() {
 async function endWithError(message) {
   if (finishing) return;
   finishing = true;
-  state.runner?.abort();
+  const partial = state.runner?.abort();
   await stopSource();
+  const recordingName = state.source?.recordingName;
+  if (partial) {
+    await window.gutCheck.saveSession(JSON.stringify({ ...partial, recording: recordingName || null, error: message }));
+  }
   if (!state.demo) await bridge.destroy();
   finishing = false;
   state.source = null;
-  go('setup');
+  await go('setup');
   setupError(message);
 }
 
