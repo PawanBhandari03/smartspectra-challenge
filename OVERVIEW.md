@@ -73,6 +73,22 @@ Honesty rules:
 | **@smartspectra/node-sdk** | Presage's SDK | Webcam → vitals |
 | **Chart.js** | Free charting library | Timeline and result charts |
 | **dotenv** | Reads the API key from the `.env` file | Keeps the key out of the code |
+| **esbuild** | A fast "bundler": packs our screen code + the SDK's screen-side code into one file (`dist/renderer.js`) | The SDK's screen code uses Node-style `require`, which a browser window can't run directly |
+
+### How the live measurement actually flows
+
+1. The screen opens the webcam with the browser camera API (`getUserMedia`). This is free: no credits until measuring starts.
+2. On "Start", the screen hands that camera stream to the SDK's **renderer part** (`@smartspectra/node-sdk/renderer`).
+3. The renderer part sends each video frame through the **preload bridge** to the SDK's **main part** (`bindSmartSpectraIpc` in the main process), which runs Presage's native engine.
+4. Results come back the same way as small binary packets, decoded with `@smartspectra/node-sdk/messages` into numbers (pulse, breathing, HRV, expressions, blinks).
+5. Every event is also written to a **recording** (`recordings/session-*.jsonl`) so it can be replayed later for free.
+
+### How to run it
+
+```
+npm start
+```
+This bundles the code (`scripts/build.js`) and opens the app (`scripts/start.js`).
 
 ```
    Webcam
@@ -117,12 +133,18 @@ smartspectra-challenge/
 ├── .env               ← YOUR API key (never uploaded to GitHub)
 ├── .env.example       ← template showing what goes in .env
 ├── .gitignore         ← files git must never upload
+├── scripts/
+│   ├── build.js       ← bundles renderer + preload into dist/
+│   └── start.js       ← launches Electron
 ├── src/
-│   ├── main/          ← Electron main process (SDK, saving sessions)
-│   ├── preload/       ← secure bridge
-│   ├── renderer/      ← screens: HTML, CSS, JS, charts
-│   └── core/          ← scoring logic, live + replay data sources
-└── recordings/        ← sample sessions for replay mode
+│   ├── main/main.js   ← Electron main process: window, SDK binding, API key, saving recordings
+│   ├── preload/       ← secure bridge (SDK bridge + our gutCheck functions)
+│   ├── renderer/      ← screens: index.html, styles.css, app.js
+│   └── core/
+│       ├── sources.js ← LiveSource (real SDK) and ReplaySource (saved file): same events
+│       └── vitals.js  ← decodes SDK packets → pulse, breathing, HRV, expression, blinks
+├── dist/              ← generated bundles (not committed)
+└── recordings/        ← saved sessions for replay mode (not committed: personal data)
 ```
 
 ## 9. Privacy
@@ -137,3 +159,4 @@ smartspectra-challenge/
 | Date | What happened |
 |---|---|
 | 2026-11-11 | Researched the SDK and other entries; locked the idea (Gut Check) and tech (Electron); wrote OVERVIEW + ROADMAP; created the project skeleton |
+| 2026-11-11 | Installed Electron 45, SDK 3.5, dotenv, esbuild. Built the **Signal Lab** test screen: camera preview + free fps check, live test with hard auto-stop, live vitals panel, automatic recording, and replay mode. Verified decoding with fake packets and that the app launches. No credits used yet. |

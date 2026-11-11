@@ -4,7 +4,8 @@
   "description": "Your body votes on your decisions. A webcam-based desktop app built with the Presage SmartSpectra SDK.",
   "main": "src/main/main.js",
   "scripts": {
-    "start": "electron ."
+    "build": "node scripts/build.js",
+    "start": "node scripts/build.js && node scripts/start.js"
   },
   "author": "Pawan Bhandari",
   "license": "MIT",
@@ -14,6 +15,7 @@
     "dotenv": "^18.0.10"
   },
   "devDependencies": {
-    "electron": "^45.3.0"
+    "electron": "^45.3.0",
+    "esbuild": "^0.28.2"
   }
 }

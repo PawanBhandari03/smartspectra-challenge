@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob: mediastream:">
+  <title>Gut Check — Signal Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Gut Check <span class="sub">Signal Lab</span></h1>
+    <span id="modeChip" class="chip">idle</span>
+  </header>
+
+  <main>
+    <section class="col">
+      <div class="card">
+        <div class="video-wrap">
+          <video id="preview" autoplay muted playsinline></video>
+          <div class="oval"></div>
+          <div id="videoPlaceholder" class="placeholder">Camera is off</div>
+        </div>
+        <div class="row">
+          <button id="openCam">Open camera</button>
+          <button id="closeCam" disabled>Close camera</button>
+        </div>
+        <p class="muted">Camera: <span id="camInfo">—</span> · Measured: <b id="camFps">—</b> fps <span class="muted">(free, no credits)</span></p>
+      </div>
+
+      <div class="card">
+        <h2>Live test <span class="badge warn">uses credits</span></h2>
+        <div class="row">
+          <label>Auto-stop after
+            <select id="duration">
+              <option value="30">30 s</option>
+              <option value="60" selected>60 s</option>
+              <option value="90">90 s</option>
+            </select>
+          </label>
+          <button id="startLive" class="primary" disabled>Start live test</button>
+          <button id="stopRun" disabled>Stop</button>
+        </div>
+        <p class="muted">Elapsed: <b id="elapsed">0 s</b> · Credits this run: <b id="credits">0</b> · Frames sent: <b id="sentFps">—</b>/s</p>
+        <p id="keyWarning" class="error hidden">No API key found. Put PRESAGE_API_KEY=... in the .env file and restart.</p>
+      </div>
+
+      <div class="card">
+        <h2>Replay <span class="badge ok">free</span></h2>
+        <div class="row">
+          <select id="recordings"></select>
+          <select id="speed">
+            <option value="1">1×</option>
+            <option value="4">4×</option>
+            <option value="10">10×</option>
+          </select>
+          <button id="startReplay">Replay</button>
+          <button id="refreshRecordings">↻</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="vitals">
+        <div class="vital"><span class="label">Pulse</span><span id="vPulse" class="value">—</span><span class="unit">bpm</span><span id="vPulseQ" class="q"></span></div>
+        <div class="vital"><span class="label">Breathing</span><span id="vBreath" class="value">—</span><span class="unit">/min</span><span id="vBreathQ" class="q"></span></div>
+        <div class="vital"><span class="label">HRV (RMSSD)</span><span id="vHrv" class="value">—</span><span class="unit">ms</span><span id="vHrvQ" class="q"></span></div>
+        <div class="vital"><span class="label">Stress index</span><span id="vStress" class="value">—</span><span class="unit">Baevsky</span></div>
+        <div class="vital"><span class="label">Expression</span><span id="vExpr" class="value small">—</span><span id="vExprQ" class="q"></span></div>
+        <div class="vital"><span class="label">Blinks</span><span id="vBlinks" class="value">—</span><span id="vBlinkRate" class="unit"></span></div>
+      </div>
+
+      <div class="card">
+        <p>Status: <b id="procStatus">—</b> · Packets: <b id="packets">0</b></p>
+        <p>Guidance: <b id="validation">—</b></p>
+      </div>
+
+      <div class="card">
+        <h2>Event log</h2>
+        <pre id="log"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../dist/renderer.js"></script>
+</body>
+</html>

@@ -16,14 +16,16 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] 👤 Share the GitHub repo URL and push the first commits
 
 ## Phase 1 — First live test (Nov 11–12)
-- [ ] Minimal Electron window that opens
-- [ ] Connect SDK: camera preview + live pulse / breathing numbers on screen
-- [ ] 💳 👤 First live test (~1–2 min): sit in front of the webcam, check the numbers appear
-- [ ] Session recorder: save every SDK message to a JSON file
+- [x] Minimal Electron window that opens ("Signal Lab" test screen)
+- [x] Connect SDK: camera preview + live vitals panel (pulse, breathing, HRV, stress, expression, blinks)
+- [x] Free camera check: real frames-per-second measurement before spending credits
+- [x] Hard auto-stop timer (30/60/90 s) + stop on any SDK error
+- [x] Session recorder: every SDK event saved to `recordings/*.jsonl`
+- [ ] 💳 👤 First live test (~1 min): confirm all 5 signals arrive and the frame rate holds ≥ 25 fps
 - [ ] 💳 👤 Record 2–3 sample sessions (~3–5 min each, incl. imagining options)
 
 ## Phase 2 — Replay mode + full flow (Nov 13–15)
-- [ ] Replay mode: play a recorded session as if live (0 credits)
+- [x] Replay mode: play a recorded session as if live (0 credits) — built early in Phase 1
 - [ ] Screen: enter options
 - [ ] Screen: consent / privacy
 - [ ] Screen: camera check with guide oval + lighting hints
