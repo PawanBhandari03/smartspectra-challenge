@@ -155,6 +155,17 @@ ipcMain.handle('session:save', (_e, json) => {
   return name;
 });
 
+ipcMain.handle('session:list', () => {
+  if (!fs.existsSync(sessionsDir)) return [];
+  return fs.readdirSync(sessionsDir).filter((f) => f.endsWith('.json')).sort().reverse();
+});
+
+ipcMain.handle('session:read', (_e, name) => {
+  const base = path.basename(String(name));
+  if (!base.endsWith('.json')) throw new Error('Not a session file');
+  return fs.readFileSync(path.join(sessionsDir, base), 'utf8');
+});
+
 ipcMain.handle('gutcheck:listRecordings', () => {
   if (!fs.existsSync(recordingsDir)) return [];
   return fs.readdirSync(recordingsDir).filter((f) => f.endsWith('.jsonl')).sort().reverse();
@@ -194,9 +205,13 @@ function createWindow() {
     let n = 0;
     const timer = setInterval(async () => {
       if (win.isDestroyed()) return clearInterval(timer);
-      await win.webContents.executeJavaScript(`window.scrollTo(0, ${n % 2 ? 'document.body.scrollHeight' : 0})`);
-      const img = await win.webContents.capturePage();
-      fs.writeFileSync(path.join(shotsDir, `shot-${String(n++).padStart(3, '0')}.png`), img.toPNG());
+      try {
+        await win.webContents.executeJavaScript(`window.scrollTo(0, ${n % 2 ? 'document.body.scrollHeight' : 0})`);
+        const img = await win.webContents.capturePage();
+        fs.writeFileSync(path.join(shotsDir, `shot-${String(n++).padStart(3, '0')}.png`), img.toPNG());
+      } catch {
+        // The window can't be captured while minimised; try again on the next tick.
+      }
     }, 2000);
   }
 }

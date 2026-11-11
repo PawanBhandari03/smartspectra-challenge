@@ -3,6 +3,7 @@ const { LiveSource, ReplaySource } = require('../core/sources');
 const { buildPlan, plannedDurationMs, SessionRunner } = require('../core/session');
 const { analyzeSession, pulseTrace, MIN_CONFIDENCE, MIN_ROUND_GAP_BPM, MOMENT } = require('../core/analysis');
 const { renderTimeline, OPTION_COLORS } = require('./timeline');
+const { VitalsTracker } = require('../core/vitals');
 const { REQUESTED_METRICS } = require('../core/metrics');
 
 const $ = (id) => document.getElementById(id);
@@ -44,9 +45,14 @@ const state = {
 // ---------- Navigation ----------
 
 function go(name) {
+  if (state.source && name !== 'session') return Promise.resolve();
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === `screen-${name}`));
+  $('appBar').classList.toggle('hidden', name === 'session');
+  window.scrollTo(0, 0);
   if (name === 'setup') return enterSetup();
   closeCamera();
+  if (name === 'options') renderOptions();
+  if (name === 'history') return renderHistory();
   return Promise.resolve();
 }
 
@@ -60,12 +66,13 @@ function renderOptions() {
   state.options.forEach((opt, i) => {
     const card = document.createElement('div');
     card.className = 'option-card';
+    card.style.setProperty('--opt-color', OPTION_COLORS[i]);
 
     const head = document.createElement('div');
     head.className = 'head';
     const title = document.createElement('span');
     title.textContent = `Option ${i + 1}`;
-    head.appendChild(title);
+    head.append(swatch(OPTION_COLORS[i]), title);
 
     const label = document.createElement('input');
     label.type = 'text';
@@ -87,7 +94,7 @@ function renderOptions() {
   });
 }
 
-$('welcomeNext').onclick = () => { renderOptions(); go('options'); };
+$('welcomeNext').onclick = () => go('options');
 
 $('optionsNext').onclick = () => {
   const cleaned = state.options.map((o) => ({ label: o.label.trim(), detail: o.detail.trim() }));
@@ -263,6 +270,8 @@ function setupError(msg) {
 // ---------- Session ----------
 
 const thumbCtx = $('thumbCanvas').getContext('2d');
+const FOCUS_PREF_KEY = 'gutcheck.focusMode';
+const live = { tracker: new VitalsTracker(), startedAt: 0, previewSeen: false };
 
 bridge.onPreview((pixels, width, height) => {
   if (!(state.source instanceof LiveSource)) return;
@@ -270,14 +279,72 @@ bridge.onPreview((pixels, width, height) => {
   if (canvas.width !== width) canvas.width = width;
   if (canvas.height !== height) canvas.height = height;
   thumbCtx.putImageData(new ImageData(new Uint8ClampedArray(pixels.buffer, pixels.byteOffset, pixels.byteLength), width, height), 0, 0);
+  if (!live.previewSeen) {
+    live.previewSeen = true;
+    $('liveNote').classList.add('hidden');
+  }
 });
+
+function sessionLog(msg) {
+  const el = $('sessionLog');
+  el.textContent += `${new Date().toLocaleTimeString()}  ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+  console.log(msg);
+}
+
+function renderLiveVitals() {
+  const { pulse, breathing, expression, blinkCount } = live.tracker;
+  $('vPulse').textContent = pulse?.value != null ? Math.round(pulse.value) : '—';
+  $('vPulseQ').textContent = pulse ? (pulse.stable ? 'steady' : 'warming up') : 'waiting';
+  $('vPulseQ').className = `vital-q ${pulse?.stable ? 'stable' : ''}`;
+  const heart = $('heartIcon');
+  if (pulse?.value) {
+    heart.style.setProperty('--beat', `${(60 / pulse.value).toFixed(2)}s`);
+    heart.classList.add('beating');
+  }
+  $('vBreath').textContent = breathing?.value != null ? breathing.value.toFixed(1) : '—';
+  $('vBreathQ').textContent = breathing ? (breathing.stable ? 'steady' : 'warming up') : 'waiting';
+  $('vBreathQ').className = `vital-q ${breathing?.stable ? 'stable' : ''}`;
+  $('vBlinks').textContent = blinkCount;
+  const minutes = ((performance.now() - live.startedAt) * (state.runner?.speed || 1)) / 60000;
+  $('vBlinkRate').textContent = minutes > 0.25 ? `${Math.round(blinkCount / minutes)}/min` : '';
+  $('vExpr').textContent = expression?.top ? `${expression.top} ${Math.round(expression.topScore)}%` : '—';
+}
+
+function applyFocusMode() {
+  const on = $('focusMode').checked;
+  $('vitalGrid').classList.toggle('focus', on);
+  $('focusNote').classList.toggle('hidden', !on);
+  try { localStorage.setItem(FOCUS_PREF_KEY, on ? '1' : '0'); } catch { /* storage unavailable */ }
+}
+
+$('focusMode').onchange = applyFocusMode;
+try { $('focusMode').checked = localStorage.getItem(FOCUS_PREF_KEY) === '1'; } catch { /* storage unavailable */ }
+applyFocusMode();
+
+$('copyLog').onclick = async (e) => {
+  e.preventDefault();
+  try {
+    await navigator.clipboard.writeText($('sessionLog').textContent);
+  } catch {
+    return;
+  }
+  $('copyIcon').classList.add('hidden');
+  $('copiedIcon').classList.remove('hidden');
+  $('copyLog').classList.add('done');
+  setTimeout(() => {
+    $('copyIcon').classList.remove('hidden');
+    $('copiedIcon').classList.add('hidden');
+    $('copyLog').classList.remove('done');
+  }, 1500);
+};
 
 function buildPhaseBar(plan) {
   const bar = $('phaseBar');
   bar.innerHTML = '';
   for (const p of plan.phases) {
     const seg = document.createElement('div');
-    seg.className = `seg ${p.kind}`;
+    seg.className = `seg ${p.kind}${p.kind === 'option' ? ` option${p.optionIndex}` : ''}`;
     seg.style.flexGrow = String(Math.round((p.durationMs || plan.timing.settleMinMs) / 1000));
     seg.appendChild(document.createElement('i'));
     bar.appendChild(seg);
@@ -300,13 +367,13 @@ function showPrompt(text) {
 }
 
 function onPhase(phase, index) {
-  console.log(`Phase ${index}: ${phase.kind}${phase.kind === 'option' ? ` (${state.plan.options[phase.optionIndex].label})` : ''} at ${state.runner.now()} ms`);
+  sessionLog(`Phase ${index}: ${phaseTitle(phase)}${phase.kind === 'option' ? ` (${state.plan.options[phase.optionIndex].label})` : ''} at ${Math.round(state.runner.now() / 1000)} s`);
   $('phaseLabel').textContent = phaseTitle(phase);
   $('settleChecks').classList.toggle('hidden', phase.kind !== 'settle');
   const title = $('optionTitle');
   if (phase.kind === 'option') {
     title.textContent = `${state.plan.options[phase.optionIndex].label}${phase.visit === 2 ? ' · second look' : ''}`;
-    title.classList.remove('hidden');
+    title.className = `option-title opt${phase.optionIndex}`;
   } else {
     title.classList.add('hidden');
   }
@@ -373,12 +440,36 @@ async function beginSession() {
   let lastError = '';
   source.on('error', (code, message) => {
     lastError = `${message} (${nameOf(SmartSpectraErrorCode, code)})`;
-    console.log(`SDK error: ${lastError}`);
+    if (!demo) sessionLog(`SDK error: ${lastError}`);
   });
   source.on('processingStatus', (status) => {
+    if (!demo) sessionLog(`SDK status: ${nameOf(ProcessingStatus, status)}`);
     if (!demo && status === ProcessingStatus.kError) endWithError(`The measurement stopped: ${lastError || 'unknown error'}`);
   });
-  if (!demo) source.on('fps', (sent) => { $('thumbBadge').textContent = `● REC · ${sent} fps`; });
+  let lastCode = null;
+  source.on('validationStatus', (code) => {
+    if (code === lastCode) return;
+    lastCode = code;
+    sessionLog(`Camera guidance: ${code === 0 ? 'OK' : GUIDANCE[code] || `code ${code}`}`);
+  });
+  source.on('fps', (sent) => { if (!demo) $('thumbBadge').textContent = `● REC · ${sent} fps`; });
+  source.on('metrics', (buf) => {
+    try { live.tracker.ingest(buf); } catch { return; }
+    renderLiveVitals();
+  });
+  source.on('loop', () => live.tracker.blinks.reset());
+
+  live.tracker.reset();
+  live.startedAt = performance.now();
+  live.previewSeen = false;
+  $('heartIcon').classList.remove('beating');
+  renderLiveVitals();
+  $('sessionLog').textContent = '';
+  sessionLog(demo ? `Demo session: replaying ${$('demoRecording').selectedOptions[0]?.textContent} at ${speed}×` : `Live session with ${$('cameraSelect').selectedOptions[0].textContent}`);
+  sessionLog(`Options: "${state.options[0].label}" vs "${state.options[1].label}"`);
+  thumbCtx.clearRect(0, 0, $('thumbCanvas').width, $('thumbCanvas').height);
+  $('liveNote').textContent = demo ? 'Demo: replaying recorded data (no camera)' : 'Starting the camera…';
+  $('liveNote').classList.remove('hidden');
 
   buildPhaseBar(plan);
   lastPrompt = '';
@@ -388,7 +479,6 @@ async function beginSession() {
   $('optionTitle').classList.add('hidden');
   $('settleChecks').classList.add('hidden');
   $('guidance').classList.add('hidden');
-  $('thumbCanvas').classList.toggle('hidden', demo);
   $('thumbBadge').textContent = demo ? `DEMO ${speed}×` : '● REC';
   $('thumbBadge').classList.toggle('demo', demo);
   go('session');
@@ -450,7 +540,7 @@ async function finishSession(result) {
   go('results');
 }
 
-// ---------- Results (interim; the designed Body Vote screen comes after the ABBA null test passes) ----------
+// ---------- Results: "a mirror, not a verdict" ----------
 
 const fmt = (v, digits = 0) => (v == null ? '—' : v.toFixed(digits));
 
@@ -561,6 +651,7 @@ function renderOptionSummary(a) {
   a.options.forEach((o, i) => {
     const card = document.createElement('div');
     card.className = `opt${a.verdict.kind === 'lean' && a.verdict.calmerIndex === i ? ' calmer' : ''}`;
+    card.style.setProperty('--opt-color', OPTION_COLORS[i]);
     const name = document.createElement('div');
     name.className = 'name';
     const label = document.createElement('span');
@@ -634,7 +725,7 @@ function renderReflection(a, options) {
   if (top) qs.push(`At "${top.prompt}" your pulse rose. What came up for you right then?`);
   if (a.moments.calmest) qs.push(`Your body eased at "${a.moments.calmest.prompt}". What felt settled there?`);
   if (a.verdict.kind === 'tooClose') {
-    qs.push('Your body didn\'t pick a side. When you read "too close to call", did you feel relief or disappointment? That feeling is information too.');
+    qs.push('When you read that your body didn\'t pick a side, did you feel relief or disappointment? That feeling is information too.');
   } else if (a.verdict.kind === 'lean') {
     qs.push(`Your body was calmer with "${a.verdict.calmerLabel}". Does that match what you expected, or surprise you?`);
   }
@@ -652,16 +743,84 @@ $('newSession').onclick = () => {
   state.options = [{ label: '', detail: '' }, { label: '', detail: '' }];
   $('consentBox').checked = false;
   $('consentNext').disabled = true;
-  go('welcome');
+  go('options');
 };
+
+// ---------- History ----------
+
+function sessionDate(name) {
+  const m = name.match(/(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/);
+  if (!m) return name;
+  return new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`)
+    .toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+async function renderHistory() {
+  const list = $('historyList');
+  list.innerHTML = '';
+  const names = await window.gutCheck.listSessions();
+  for (const name of names) {
+    let session;
+    try { session = JSON.parse(await window.gutCheck.readSession(name)); } catch { continue; }
+    if (!session.options || session.options.length < 2) continue;
+    const a = analyzeSession(session);
+
+    const item = document.createElement('button');
+    item.className = 'history-item';
+    const left = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'title';
+    const first = document.createElement('span');
+    first.textContent = session.options[0].label;
+    const vs = document.createElement('span');
+    vs.className = 'vs';
+    vs.textContent = 'vs';
+    const second = document.createElement('span');
+    second.textContent = session.options[1].label;
+    title.append(swatch(OPTION_COLORS[0]), first, vs, swatch(OPTION_COLORS[1]), second);
+    if (session.demo) {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = 'Demo';
+      title.appendChild(chip);
+    }
+    if ((session.version || 1) < 2) {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = 'Early format';
+      title.appendChild(chip);
+    }
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = sessionDate(name);
+    left.append(title, meta);
+    const verdict = document.createElement('div');
+    verdict.className = 'verdict';
+    verdict.textContent = verdictText(a.verdict).title;
+    item.append(left, verdict);
+    item.onclick = () => {
+      renderResults(session, name, session.recording);
+      go('results');
+    };
+    list.appendChild(item);
+  }
+  if (!list.children.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty';
+    empty.textContent = 'No sessions yet. Start a Gut Check to see it here.';
+    list.appendChild(empty);
+  }
+}
 
 // ---------- Start ----------
 
 (async () => {
   state.info = await bridge.info();
   const auto = await window.gutCheck.getAutoReplay();
-  // Dev/testing hook: run a full demo session automatically with sample options.
-  if (auto) {
+  // Dev/testing hooks: "screen:<name>" opens a screen; a recording name runs a full demo session.
+  if (auto.startsWith('screen:')) {
+    await go(auto.slice(7));
+  } else if (auto) {
     state.options = [{ label: 'Stay in my city', detail: '' }, { label: 'Move for the new job', detail: 'higher salary' }];
     document.querySelector('input[name="source"][value="demo"]').checked = true;
     await go('setup');

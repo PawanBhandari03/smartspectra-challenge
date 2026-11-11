@@ -53,9 +53,10 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [ ] 💳 👤 ABBA real decision session
 
 ## Phase 4 — Polish (Nov 18–19)
-- [ ] Visual design (colours, fonts, animations)
+- [x] Visual design: colour brand, top bar + navigation, new welcome page, coloured signal tiles
+- [x] Session screen with the Signal Lab layout: live camera, live vitals, session log, focus mode
 - [ ] Optional AI reflection (Presage "insights", free)
-- [ ] Session history: view and compare past sessions
+- [x] Session history: reopen past sessions
 - [ ] Error handling: bad lighting, face lost, low frame rate
 - [ ] App name + icon finalised 👤
 

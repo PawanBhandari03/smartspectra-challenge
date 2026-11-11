@@ -165,7 +165,8 @@ smartspectra-challenge/
 │   ├── main/main.js   ← Electron main process: window, the SDK + camera, API key, saving recordings
 │   ├── preload/       ← secure bridge: window.gutCheck (SDK controls, events, recordings)
 │   ├── renderer/
-│   │   ├── index.html, app.js, app.css ← the Gut Check app (welcome → options → consent → camera → session → results)
+│   │   ├── index.html, app.js, app.css ← the Gut Check app (welcome → options → consent → camera → session → results, history)
+│   │   ├── timeline.js                 ← the pulse-over-time chart on the results screen (hand-built SVG)
 │   │   └── lab.html, lab.js, lab.css   ← Signal Lab: developer test page (link bottom-right of the welcome screen)
 │   └── core/
 │       ├── sources.js  ← LiveSource (real SDK, streams the recording to disk) and ReplaySource (saved file, can loop)
@@ -195,6 +196,8 @@ smartspectra-challenge/
 | 2026-11-11 | Added a camera picker. **Second live test** with the phone camera (Samsung S21 Ultra via Windows Phone Link), 90 s, ~3 credits: **steady 30 fps, all signals arrived.** See "What real data taught us" below. |
 | 2026-11-11 | Live preview during measurement (SDK frames, REC badge), one explicitly chosen camera for preview + measurement, auto-stop counted from when measuring starts, copy-log icon. |
 | 2026-11-11 | **Phase 2:** the real Gut Check app: welcome, options, consent, camera check, the full guided session (settle → baseline → options in random order with resets → end baseline) with progress bar, prompts, guidance hints and a small live thumbnail, and a first results table. Demo mode runs a whole session from a recording. Signal Lab moved to its own page. Verified with automated demo sessions + screenshots. |
+| 2026-11-11 | Two real sessions (control + real decision) → the control experiment (below). Redesign: "asks twice" (A B B A), pulse-only, calibrated verdict, ~4 min session with faster option-specific prompts. Product decision: **a mirror, not a verdict** — results with pulse timeline, reaction moments and reflection questions. |
+| 2026-11-12 | **Visual redesign:** colour brand (violet→pink), top bar with logo + navigation, new welcome page. The session screen now has the Signal Lab layout: live camera, live tiles (pulse with a heart beating at your rate, breathing, blinks, expression), session log with copy, and an optional focus mode. **History** screen to reopen past sessions. |
 
 ## The control experiment (Nov 11, two real 6-minute sessions)
 

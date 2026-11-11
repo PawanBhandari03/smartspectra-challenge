@@ -9,22 +9,50 @@
 </head>
 <body>
 
+  <!-- Top bar (hidden during a session) -->
+  <header id="appBar" class="app-bar">
+    <button class="brand" data-go="welcome" title="Home">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#8b6cff"/><stop offset="1" stop-color="#ff5fa2"/>
+          </linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="9" fill="url(#logoGrad)"/>
+        <path d="M5 17h5l2.5-6 4 11 3-8 1.8 3H27" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Gut Check</span>
+    </button>
+    <nav>
+      <button data-go="options" class="nav">New check</button>
+      <button data-go="history" class="nav">History</button>
+      <a href="lab.html" class="nav">Signal Lab</a>
+    </nav>
+  </header>
+
   <!-- 1. Welcome -->
   <section id="screen-welcome" class="screen active">
-    <div class="center narrow">
-      <p class="eyebrow">Gut Check</p>
-      <h1>Your body votes on your decisions.</h1>
-      <p class="lead">Stuck between options? Imagine living each one while your webcam quietly reads your pulse, breathing,
-        blinks and expressions. Then see which option your body relaxed into, and which one it tensed up at.</p>
-      <ol class="steps">
-        <li><b>Name your two options</b> <span>the choices you're torn between</span></li>
-        <li><b>Imagine each one, twice</b> <span>short guided scenes, one minute per visit</span></li>
-        <li><b>See your Body Vote</b> <span>only when both rounds agree; otherwise it honestly says "too close to call"</span></li>
-      </ol>
+    <div class="center narrow hero">
+      <svg class="hero-line" viewBox="0 0 600 80" aria-hidden="true">
+        <defs>
+          <linearGradient id="heroGrad" x1="0" x2="1">
+            <stop offset="0" stop-color="#8b6cff" stop-opacity="0"/><stop offset=".3" stop-color="#8b6cff"/>
+            <stop offset=".7" stop-color="#ff5fa2"/><stop offset="1" stop-color="#ff5fa2" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0 45h200l14-28 22 52 18-38 12 14h334" fill="none" stroke="url(#heroGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>Your body votes<br><span class="grad-text">on your decisions.</span></h1>
+      <p class="lead">Torn between two options? Imagine living each one while your camera quietly reads your pulse, blinks
+        and expressions. Then see where your body reacted, moment by moment.</p>
+      <div class="step-cards">
+        <div class="step-card"><span class="step-icon violet">1</span><b>Name two options</b><span>the choices you're torn between</span></div>
+        <div class="step-card"><span class="step-icon pink">2</span><b>Imagine each, twice</b><span>guided scenes, about 4 minutes</span></div>
+        <div class="step-card"><span class="step-icon teal">3</span><b>See your mirror</b><span>honest, moment-by-moment reactions</span></div>
+      </div>
       <button id="welcomeNext" class="primary big">Start a Gut Check</button>
       <p class="fine">A reflection tool for general wellness, not medical advice. Video never leaves your computer.</p>
     </div>
-    <a href="lab.html" class="dev-link">Signal Lab</a>
   </section>
 
   <!-- 2. Options -->
@@ -32,11 +60,11 @@
     <div class="center narrow">
       <p class="eyebrow">Step 1 of 3</p>
       <h2>What are you deciding between?</h2>
-      <p class="lead">Keep each option short. The optional detail makes the visualization more vivid.</p>
+      <p class="lead">Keep each option short. The optional detail makes the scenes more vivid.</p>
       <div id="optionList" class="option-list"></div>
       <p id="optionsError" class="error hidden"></p>
       <div class="actions">
-        <button class="back" data-go="welcome">Back</button>
+        <button class="ghost" data-go="welcome">Back</button>
         <button id="optionsNext" class="primary">Next</button>
       </div>
     </div>
@@ -48,14 +76,14 @@
       <p class="eyebrow">Step 2 of 3</p>
       <h2>Before we start</h2>
       <ul class="facts">
-        <li><b>Your camera measures, nothing is filmed.</b> Video is processed on this computer. Only numbers (pulse, breathing, blinks, expressions) are saved, on this computer.</li>
-        <li><b>It's a mirror, not a decision machine.</b> A racing heart can mean fear or excitement. The result is a prompt to reflect, never a verdict.</li>
-        <li><b>Not medical advice.</b> Gut Check is a general wellness tool and doesn't diagnose anything.</li>
-        <li><b>You can stop at any time.</b></li>
+        <li><span class="fact-icon teal">◉</span><div><b>Your camera measures, nothing is filmed.</b> Video is processed on this computer. Only numbers are saved, on this computer.</div></li>
+        <li><span class="fact-icon violet">◐</span><div><b>It's a mirror, not a decision machine.</b> A racing heart can mean fear or excitement. The result is a prompt to reflect, never a verdict.</div></li>
+        <li><span class="fact-icon pink">✚</span><div><b>Not medical advice.</b> Gut Check is a general wellness tool and doesn't diagnose anything.</div></li>
+        <li><span class="fact-icon amber">■</span><div><b>You can stop at any time.</b></div></li>
       </ul>
       <label class="check"><input id="consentBox" type="checkbox"> I understand and want to continue</label>
       <div class="actions">
-        <button class="back" data-go="options">Back</button>
+        <button class="ghost" data-go="options">Back</button>
         <button id="consentNext" class="primary" disabled>Continue</button>
       </div>
     </div>
@@ -67,7 +95,7 @@
       <p class="eyebrow">Step 3 of 3</p>
       <h2>Camera check</h2>
       <div class="setup-grid">
-        <div>
+        <div class="panel">
           <div class="video-wrap">
             <video id="setupVideo" autoplay muted playsinline></video>
             <div class="oval"></div>
@@ -101,7 +129,7 @@
           </div>
           <p id="setupError" class="error hidden"></p>
           <div class="actions">
-            <button class="back" data-go="consent">Back</button>
+            <button class="ghost" data-go="consent">Back</button>
             <button id="beginSession" class="primary">Begin session</button>
           </div>
         </div>
@@ -109,30 +137,86 @@
     </div>
   </section>
 
-  <!-- 5. Session -->
+  <!-- 5. Session: live panel (camera, vitals, log) + prompts -->
   <section id="screen-session" class="screen session">
-    <div class="session-top">
-      <div id="phaseBar" class="phase-bar"></div>
-      <div class="phase-meta">
-        <span id="phaseLabel">Starting…</span>
-        <span id="phaseClock"></span>
+    <aside class="live-panel">
+      <div class="live-video">
+        <canvas id="thumbCanvas"></canvas>
+        <div class="oval"></div>
+        <div id="liveNote" class="placeholder"></div>
+        <span id="thumbBadge" class="badge-rec">● REC</span>
       </div>
-    </div>
-    <div id="guidance" class="guidance hidden"></div>
-    <div class="prompt-area">
-      <p id="optionTitle" class="option-title hidden"></p>
-      <p id="prompt" class="prompt">Starting the camera…</p>
-      <ul id="settleChecks" class="settle-checks hidden">
-        <li id="chkFrames">Camera steady</li>
-        <li id="chkFace">Face found</li>
-        <li id="chkPulse">Pulse found</li>
-      </ul>
-    </div>
-    <div class="thumb">
-      <canvas id="thumbCanvas"></canvas>
-      <span id="thumbBadge" class="badge-rec">● REC</span>
-    </div>
-    <button id="stopSession" class="stop">Stop session</button>
+
+      <div id="vitalGrid" class="vital-grid">
+        <div class="vital coral">
+          <div class="vital-head">
+            <svg id="heartIcon" class="icon heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>
+            <span>Pulse</span>
+          </div>
+          <div class="vital-value"><span id="vPulse">—</span><small>bpm</small></div>
+          <div id="vPulseQ" class="vital-q"></div>
+        </div>
+        <div class="vital teal">
+          <div class="vital-head">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>Breathing</span>
+          </div>
+          <div class="vital-value"><span id="vBreath">—</span><small>/min</small></div>
+          <div id="vBreathQ" class="vital-q"></div>
+        </div>
+        <div class="vital violet">
+          <div class="vital-head">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Blinks</span>
+          </div>
+          <div class="vital-value"><span id="vBlinks">0</span><small id="vBlinkRate"></small></div>
+          <div class="vital-q">eyes</div>
+        </div>
+        <div class="vital amber">
+          <div class="vital-head">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="1.3"/><circle cx="15" cy="10" r="1.3"/><path d="M8.5 14.5c1.9 2 5.1 2 7 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>Expression</span>
+          </div>
+          <div class="vital-value small"><span id="vExpr">—</span></div>
+          <div class="vital-q">face</div>
+        </div>
+      </div>
+      <div id="focusNote" class="focus-note hidden">Focus mode: numbers hidden so they don't distract you. Measuring continues.</div>
+
+      <label class="toggle"><input id="focusMode" type="checkbox"> <span>Focus mode (hide live numbers)</span></label>
+
+      <details class="log-drawer">
+        <summary>
+          <span>Session log</span>
+          <button id="copyLog" class="icon-btn" title="Copy log" aria-label="Copy log">
+            <svg id="copyIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <svg id="copiedIcon" class="hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+          </button>
+        </summary>
+        <pre id="sessionLog"></pre>
+      </details>
+    </aside>
+
+    <main class="prompt-panel">
+      <div class="session-top">
+        <div id="phaseBar" class="phase-bar"></div>
+        <div class="phase-meta">
+          <span id="phaseLabel">Starting…</span>
+          <span id="phaseClock"></span>
+        </div>
+      </div>
+      <div id="guidance" class="guidance hidden"></div>
+      <div class="prompt-area">
+        <p id="optionTitle" class="option-title hidden"></p>
+        <p id="prompt" class="prompt">Starting the camera…</p>
+        <ul id="settleChecks" class="settle-checks hidden">
+          <li id="chkFrames">Camera steady</li>
+          <li id="chkFace">Face found</li>
+          <li id="chkPulse">Pulse found</li>
+        </ul>
+      </div>
+      <button id="stopSession" class="ghost stop">Stop session</button>
+    </main>
   </section>
 
   <!-- 6. Results -->
@@ -172,9 +256,19 @@
       </details>
 
       <div class="actions">
-        <span></span>
+        <button class="ghost" data-go="history">All sessions</button>
         <button id="newSession" class="primary">New Gut Check</button>
       </div>
+    </div>
+  </section>
+
+  <!-- 7. History -->
+  <section id="screen-history" class="screen">
+    <div class="center wide">
+      <p class="eyebrow">History</p>
+      <h2>Your past Gut Checks</h2>
+      <p class="lead">Open any session to see its mirror again. Everything stays on this computer.</p>
+      <div id="historyList" class="history-list"></div>
     </div>
   </section>
 
