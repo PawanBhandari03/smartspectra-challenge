@@ -77,11 +77,14 @@ Honesty rules:
 
 ### How the live measurement actually flows
 
-1. The screen opens the webcam with the browser camera API (`getUserMedia`). This is free: no credits until measuring starts.
-2. On "Start", the screen hands that camera stream to the SDK's **renderer part** (`@smartspectra/node-sdk/renderer`).
-3. The renderer part sends each video frame through the **preload bridge** to the SDK's **main part** (`bindSmartSpectraIpc` in the main process), which runs Presage's native engine.
-4. Results come back the same way as small binary packets, decoded with `@smartspectra/node-sdk/messages` into numbers (pulse, breathing, HRV, expressions, blinks).
-5. Every event is also written to a **recording** (`recordings/session-*.jsonl`) so it can be replayed later for free.
+1. **Camera check (free):** the screen opens the webcam with the browser camera API (`getUserMedia`) to show a preview and measure the real frames per second. No credits are spent.
+2. **On "Start":** the preview releases the camera, and the **SDK in the main process opens the camera itself** (`useCamera`) at 1280×720 / 30 fps.
+3. Results come back from the SDK as small binary packets, are sent to the screen over the preload bridge, and are decoded with `@smartspectra/node-sdk/messages` into numbers (pulse, breathing, HRV, expressions, blinks).
+4. Every event is also written to a **recording** (`recordings/session-*.jsonl`) so it can be replayed later for free.
+
+**Why the camera runs in the main process:** the first live test (Nov 11) used the SDK's other Electron mode, where the screen copies every full-HD frame (~3.6 MB) to the engine. On this laptop only 10 frames/second got through; the SDK needs 25+, so it stopped itself (`kSustainedLowFrameRate`). Capturing natively in the engine removes that copying entirely.
+
+**Lighting matters for frame rate:** in dim light a webcam lengthens its exposure, which lowers frames per second (20 fps in the first test). Light on the face from the front fixes it. The Signal Lab also has a free "manual exposure" experiment to force a faster camera.
 
 ### How to run it
 
@@ -137,8 +140,8 @@ smartspectra-challenge/
 │   ├── build.js       ← bundles renderer + preload into dist/
 │   └── start.js       ← launches Electron
 ├── src/
-│   ├── main/main.js   ← Electron main process: window, SDK binding, API key, saving recordings
-│   ├── preload/       ← secure bridge (SDK bridge + our gutCheck functions)
+│   ├── main/main.js   ← Electron main process: window, the SDK + camera, API key, saving recordings
+│   ├── preload/       ← secure bridge: window.gutCheck (SDK controls, events, recordings)
 │   ├── renderer/      ← screens: index.html, styles.css, app.js
 │   └── core/
 │       ├── sources.js ← LiveSource (real SDK) and ReplaySource (saved file): same events
@@ -160,3 +163,4 @@ smartspectra-challenge/
 |---|---|
 | 2026-11-11 | Researched the SDK and other entries; locked the idea (Gut Check) and tech (Electron); wrote OVERVIEW + ROADMAP; created the project skeleton |
 | 2026-11-11 | Installed Electron 45, SDK 3.5, dotenv, esbuild. Built the **Signal Lab** test screen: camera preview + free fps check, live test with hard auto-stop, live vitals panel, automatic recording, and replay mode. Verified decoding with fake packets and that the app launches. No credits used yet. |
+| 2026-11-11 | **First live test** (~1 credit): API key works; expressions, blinks and breathing waveform arrive. But only 10 frames/s reached the SDK (camera gave 20 in dim light), so it stopped after ~10 s. Moved the SDK camera into the main process, added a device check, a manual-exposure experiment, and an fps warning before starting. Fixed expression % display (scores are already percentages). |

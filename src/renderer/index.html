@@ -25,7 +25,18 @@
           <button id="openCam">Open camera</button>
           <button id="closeCam" disabled>Close camera</button>
         </div>
-        <p class="muted">Camera: <span id="camInfo">—</span> · Measured: <b id="camFps">—</b> fps <span class="muted">(free, no credits)</span></p>
+        <p class="muted">Camera: <span id="camInfo">—</span> · Measured: <b id="camFps">—</b> fps <span class="muted">(needs 25+, free)</span></p>
+        <div id="exposureRow" class="row hidden">
+          <label>Exposure
+            <select id="exposureMode">
+              <option value="auto">Auto</option>
+              <option value="manual">Manual (fast)</option>
+            </select>
+          </label>
+          <input id="exposureTime" type="range">
+          <span class="muted">time <b id="exposureValue">—</b></span>
+        </div>
+        <p class="muted">The preview closes when a live test starts: the SDK then uses the camera directly.</p>
       </div>
 
       <div class="card">
@@ -40,6 +51,7 @@
           </label>
           <button id="startLive" class="primary" disabled>Start live test</button>
           <button id="stopRun" disabled>Stop</button>
+          <button id="checkDevice" disabled>Device check</button>
         </div>
         <p class="muted">Elapsed: <b id="elapsed">0 s</b> · Credits this run: <b id="credits">0</b> · Frames sent: <b id="sentFps">—</b>/s</p>
         <p id="keyWarning" class="error hidden">No API key found. Put PRESAGE_API_KEY=... in the .env file and restart.</p>

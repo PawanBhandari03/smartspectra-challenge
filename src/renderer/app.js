@@ -1,19 +1,9 @@
-const {
-  SmartSpectraSDK, MetricType, ValidationCode, SmartSpectraErrorCode, ProcessingStatus,
-} = require('@smartspectra/node-sdk/renderer');
+const { ValidationCode, SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { VitalsTracker } = require('../core/vitals');
+const { REQUESTED_METRICS } = require('../core/metrics');
 
-// Only what Gut Check uses; landmarks and the arterial trace are left out to keep processing light.
-const REQUESTED_METRICS = [
-  MetricType.CHEST_BREATHING,
-  MetricType.ABDOMEN_BREATHING,
-  MetricType.BREATHING_RATE,
-  MetricType.PULSE_RATE,
-  MetricType.HRV,
-  MetricType.BLINKING,
-  MetricType.EXPRESSIONS,
-];
+const MIN_FPS = 25;
 
 const nameOf = (table, value) => Object.keys(table).find((k) => table[k] === value) || String(value);
 
@@ -21,7 +11,8 @@ const $ = (id) => document.getElementById(id);
 const ui = {
   preview: $('preview'), placeholder: $('videoPlaceholder'), modeChip: $('modeChip'),
   openCam: $('openCam'), closeCam: $('closeCam'), camInfo: $('camInfo'), camFps: $('camFps'),
-  duration: $('duration'), startLive: $('startLive'), stopRun: $('stopRun'),
+  exposureRow: $('exposureRow'), exposureMode: $('exposureMode'), exposureTime: $('exposureTime'), exposureValue: $('exposureValue'),
+  duration: $('duration'), startLive: $('startLive'), stopRun: $('stopRun'), checkDevice: $('checkDevice'),
   elapsed: $('elapsed'), credits: $('credits'), sentFps: $('sentFps'), keyWarning: $('keyWarning'),
   recordings: $('recordings'), speed: $('speed'), startReplay: $('startReplay'), refreshRecordings: $('refreshRecordings'),
   vPulse: $('vPulse'), vPulseQ: $('vPulseQ'), vBreath: $('vBreath'), vBreathQ: $('vBreathQ'),
@@ -30,14 +21,15 @@ const ui = {
   procStatus: $('procStatus'), packets: $('packets'), validation: $('validation'), log: $('log'),
 };
 
-let apiKey = '';
+const bridge = window.gutCheck.sdk;
+let info = { hasKey: false };
 let stream = null;
-let sdk = null;
-let sdkFailed = false;
+let measuredFps = 0;
 let source = null;
 let runStartedAt = 0;
 let autoStopTimer = null;
 let clockTimer = null;
+let sdkFailed = false;
 const tracker = new VitalsTracker();
 
 function log(msg) {
@@ -50,14 +42,15 @@ function setMode(mode) {
   ui.modeChip.textContent = mode;
   ui.modeChip.className = `chip ${mode === 'live' ? 'live' : mode === 'replay' ? 'replay' : ''}`;
   const busy = mode !== 'idle';
-  ui.startLive.disabled = busy || !stream || !apiKey;
+  ui.startLive.disabled = busy || !info.hasKey;
+  ui.checkDevice.disabled = busy || !info.hasKey;
   ui.startReplay.disabled = busy || !ui.recordings.value;
   ui.stopRun.disabled = !busy;
   ui.closeCam.disabled = busy || !stream;
   ui.openCam.disabled = busy || !!stream;
 }
 
-// ---------- Camera (no credits) ----------
+// ---------- Camera check (browser camera, no credits) ----------
 
 let fpsFrames = [];
 function trackPreviewFps() {
@@ -65,8 +58,46 @@ function trackPreviewFps() {
   const now = performance.now();
   fpsFrames.push(now);
   fpsFrames = fpsFrames.filter((t) => now - t < 2000);
-  ui.camFps.textContent = (fpsFrames.length / 2).toFixed(1);
+  measuredFps = fpsFrames.length / 2;
+  ui.camFps.textContent = measuredFps.toFixed(1);
+  ui.camFps.className = measuredFps >= MIN_FPS ? 'good' : 'bad';
   ui.preview.requestVideoFrameCallback(trackPreviewFps);
+}
+
+function setupExposureControls(track) {
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  const modes = caps.exposureMode || [];
+  if (!modes.includes('manual') || !caps.exposureTime) {
+    ui.exposureRow.classList.add('hidden');
+    log(`Camera exposure control: not available (modes: ${modes.join(', ') || 'none'})`);
+    return;
+  }
+  ui.exposureRow.classList.remove('hidden');
+  ui.exposureMode.value = 'auto';
+  ui.exposureTime.min = caps.exposureTime.min;
+  ui.exposureTime.max = caps.exposureTime.max;
+  ui.exposureTime.step = caps.exposureTime.step || 1;
+  const current = track.getSettings().exposureTime;
+  ui.exposureTime.value = current ?? caps.exposureTime.min;
+  ui.exposureTime.disabled = true;
+  ui.exposureValue.textContent = ui.exposureTime.value;
+  log(`Camera exposure control available: time ${caps.exposureTime.min}–${caps.exposureTime.max} (step ${caps.exposureTime.step})`);
+}
+
+async function applyExposure() {
+  if (!stream) return;
+  const track = stream.getVideoTracks()[0];
+  const manual = ui.exposureMode.value === 'manual';
+  ui.exposureTime.disabled = !manual;
+  ui.exposureValue.textContent = ui.exposureTime.value;
+  const constraint = manual
+    ? { exposureMode: 'manual', exposureTime: Number(ui.exposureTime.value) }
+    : { exposureMode: 'continuous' };
+  try {
+    await track.applyConstraints({ advanced: [constraint] });
+  } catch (err) {
+    log(`Exposure change failed: ${err.message}`);
+  }
 }
 
 async function openCamera() {
@@ -79,39 +110,42 @@ async function openCamera() {
     log(`Camera error: ${err.message}`);
     return;
   }
+  const track = stream.getVideoTracks()[0];
   ui.preview.srcObject = stream;
   ui.placeholder.classList.add('hidden');
-  const s = stream.getVideoTracks()[0].getSettings();
+  const s = track.getSettings();
   ui.camInfo.textContent = `${s.width}×${s.height} @ ${Math.round(s.frameRate)} fps requested`;
   fpsFrames = [];
   ui.preview.requestVideoFrameCallback(trackPreviewFps);
-  log(`Camera opened: ${stream.getVideoTracks()[0].label}`);
+  log(`Camera opened: ${track.label}`);
+  setupExposureControls(track);
   setMode('idle');
 }
 
-function closeCamera() {
+async function closeCamera() {
   if (!stream) return;
+  // Hand exposure back to the camera so other apps aren't left with a manual setting.
+  if (ui.exposureMode.value === 'manual') {
+    ui.exposureMode.value = 'auto';
+    await applyExposure();
+  }
   for (const t of stream.getTracks()) t.stop();
   stream = null;
   ui.preview.srcObject = null;
   ui.placeholder.classList.remove('hidden');
   ui.camFps.textContent = '—';
+  ui.camFps.className = '';
   ui.camInfo.textContent = '—';
+  ui.exposureRow.classList.add('hidden');
   log('Camera closed');
   setMode('idle');
 }
 
 // ---------- Rendering vitals ----------
 
-function quality(m) {
-  if (!m) return { text: '', cls: '' };
-  return { text: `${m.stable ? 'stable' : 'warming up'} · conf ${(m.confidence ?? 0).toFixed(2)}`, cls: m.stable ? 'stable' : '' };
-}
-
 function setQ(el, m) {
-  const q = quality(m);
-  el.textContent = q.text;
-  el.className = `q ${q.cls}`;
+  el.textContent = m ? `${m.stable ? 'stable' : 'warming up'} · conf ${(m.confidence ?? 0).toFixed(2)}` : '';
+  el.className = `q ${m?.stable ? 'stable' : ''}`;
 }
 
 function renderVitals() {
@@ -123,7 +157,8 @@ function renderVitals() {
   ui.vHrv.textContent = hrv?.rmssd != null ? Math.round(hrv.rmssd) : '—';
   setQ(ui.vHrvQ, hrv);
   ui.vStress.textContent = hrv?.baevsky != null ? Math.round(hrv.baevsky) : '—';
-  ui.vExpr.textContent = expression?.top ? `${expression.top} ${Math.round(expression.topScore * 100)}%` : '—';
+  // Expression scores arrive as percentages (they sum to ~100).
+  ui.vExpr.textContent = expression?.top ? `${expression.top} ${Math.round(expression.topScore)}%` : '—';
   ui.vExprQ.textContent = expression ? (expression.stable ? 'stable' : 'warming up') : '';
   ui.vExprQ.className = `q ${expression?.stable ? 'stable' : ''}`;
   ui.vBlinks.textContent = tracker.blinkCount;
@@ -167,10 +202,11 @@ function attach(src) {
 function beginRun(src, mode) {
   source = src;
   tracker.reset();
-  renderVitals();
   ui.validation.textContent = '—';
   ui.procStatus.textContent = '—';
+  ui.sentFps.textContent = '—';
   runStartedAt = performance.now();
+  renderVitals();
   clockTimer = setInterval(() => {
     const sec = Math.floor((performance.now() - runStartedAt) / 1000);
     ui.elapsed.textContent = `${sec} s`;
@@ -182,14 +218,18 @@ function beginRun(src, mode) {
 }
 
 async function startLive() {
-  if (!sdk) {
-    sdk = new SmartSpectraSDK({ apiKey, requestedMetrics: REQUESTED_METRICS, enableTelemetry: false });
+  if (stream && measuredFps < MIN_FPS
+      && !confirm(`The camera check shows ${measuredFps.toFixed(1)} fps (needs ${MIN_FPS}+). The SDK will likely stop early. Start anyway?`)) {
+    return;
   }
-  const settings = stream.getVideoTracks()[0].getSettings();
-  const src = new LiveSource(sdk, stream, {
+  // The SDK opens the camera itself in the main process, so the preview must let go of it first.
+  await closeCamera();
+  const src = new LiveSource(bridge, {
     mode: 'live',
+    capture: 'native',
     requestedMetrics: REQUESTED_METRICS,
-    camera: { width: settings.width, height: settings.height, frameRate: settings.frameRate },
+    camera: info.capture,
+    previewFps: measuredFps || null,
   });
   beginRun(src, 'live');
   ui.credits.textContent = '0';
@@ -206,6 +246,19 @@ async function startLive() {
     sdkFailed = true;
     await stopRun();
   }
+}
+
+async function checkDevice() {
+  ui.checkDevice.disabled = true;
+  log('Device check running…');
+  const res = await bridge.readiness();
+  if (res.ok) {
+    log(`Device check: ${res.result.verdict.toUpperCase()} — ${res.result.reason}`);
+  } else {
+    log(`Device check failed: ${res.error.message}${res.error.code != null ? ` (code ${nameOf(SmartSpectraErrorCode, res.error.code)})` : ''}`);
+    await bridge.destroy();
+  }
+  setMode('idle');
 }
 
 async function startReplay() {
@@ -235,10 +288,8 @@ async function stopRun() {
     log(`Recording saved: recordings/${saved}`);
     await refreshRecordings(saved);
   }
-  // After an error the SDK sits in its error state; a fresh instance is the reliable way to retry.
-  if (sdkFailed && sdk) {
-    sdk.destroy();
-    sdk = null;
+  if (sdkFailed) {
+    await bridge.destroy();
     sdkFailed = false;
     log('SDK reset after error. You can try again.');
   }
@@ -280,16 +331,20 @@ async function refreshRecordings(select) {
 
 ui.openCam.onclick = openCamera;
 ui.closeCam.onclick = closeCamera;
+ui.exposureMode.onchange = applyExposure;
+ui.exposureTime.oninput = applyExposure;
 ui.startLive.onclick = startLive;
 ui.stopRun.onclick = stopRun;
+ui.checkDevice.onclick = checkDevice;
 ui.startReplay.onclick = startReplay;
 ui.refreshRecordings.onclick = () => refreshRecordings();
 
 (async () => {
-  apiKey = await window.gutCheck.getApiKey();
-  ui.keyWarning.classList.toggle('hidden', !!apiKey);
+  info = await bridge.info();
+  ui.keyWarning.classList.toggle('hidden', info.hasKey);
   await refreshRecordings();
-  log(`Ready. SDK ${SmartSpectraSDK.version}. API key ${apiKey ? 'loaded' : 'MISSING'}.`);
+  const cams = info.cameras.map((c) => c.name || c.id).join(', ') || 'none found';
+  log(`Ready. SDK ${info.version}. API key ${info.hasKey ? 'loaded' : 'MISSING'}. SDK cameras: ${cams}.`);
   const auto = await window.gutCheck.getAutoReplay();
   if (auto) {
     ui.recordings.value = auto;

@@ -23,35 +23,46 @@ function b64ToU8(b64) {
   return u8;
 }
 
+// The SDK itself runs in the main process (see src/main/main.js); `bridge` is window.gutCheck.sdk.
 class LiveSource extends Emitter {
-  constructor(sdk, stream, meta) {
+  constructor(bridge, meta) {
     super();
-    this.sdk = sdk;
-    this.stream = stream;
+    this.bridge = bridge;
     this.meta = meta;
     this.lines = [];
     this.running = false;
     this._sent = 0;
     this._dropped = 0;
 
-    sdk.on('metrics', (buf, ts) => {
-      this._record({ type: 'metrics', ts, b64: u8ToB64(buf) });
-      this.emit('metrics', buf, ts);
-    });
-    sdk.on('validationStatus', (code, ts, hint) => {
-      this._record({ type: 'validation', code, ts, hint });
-      this.emit('validationStatus', code, ts, hint);
-    });
-    sdk.on('processingStatus', (status) => {
-      this._record({ type: 'status', status });
-      this.emit('processingStatus', status);
-    });
-    sdk.on('error', (code, message, retryable) => {
-      this._record({ type: 'error', code, message, retryable });
-      this.emit('error', code, message, retryable);
-    });
-    sdk.on('frameSentThrough', (sent) => {
-      if (sent) this._sent += 1; else this._dropped += 1;
+    bridge.onEvent((name, ...args) => {
+      if (!this.running) return;
+      switch (name) {
+        case 'metrics': {
+          const [buf, ts] = args;
+          this._record({ type: 'metrics', ts, b64: u8ToB64(buf) });
+          this.emit('metrics', buf, ts);
+          break;
+        }
+        case 'validationStatus': {
+          const [code, ts, hint] = args;
+          this._record({ type: 'validation', code, ts, hint });
+          this.emit('validationStatus', code, ts, hint);
+          break;
+        }
+        case 'processingStatus':
+          this._record({ type: 'status', status: args[0] });
+          this.emit('processingStatus', args[0]);
+          break;
+        case 'error': {
+          const [code, message, retryable] = args;
+          this._record({ type: 'error', code, message, retryable });
+          this.emit('error', code, message, retryable);
+          break;
+        }
+        case 'frameSentThrough':
+          if (args[0]) this._sent += 1; else this._dropped += 1;
+          break;
+      }
     });
   }
 
@@ -70,17 +81,19 @@ class LiveSource extends Emitter {
       this._dropped = 0;
     }, 1000);
     this.running = true;
-    this.sdk.useMediaStream(this.stream);
-    await this.sdk.start();
+    const res = await this.bridge.start();
+    if (!res.ok) {
+      throw Object.assign(new Error(res.error.message), { code: res.error.code, retryable: res.error.retryable });
+    }
   }
 
   async stop() {
     if (!this.running) return;
-    this.running = false;
     clearInterval(this._fpsTimer);
     try {
-      await this.sdk.stop();
+      await this.bridge.stop();
     } finally {
+      this.running = false;
       this._record({ type: 'end' });
       this.emit('ended');
     }

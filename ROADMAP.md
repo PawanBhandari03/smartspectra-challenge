@@ -21,7 +21,9 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Free camera check: real frames-per-second measurement before spending credits
 - [x] Hard auto-stop timer (30/60/90 s) + stop on any SDK error
 - [x] Session recorder: every SDK event saved to `recordings/*.jsonl`
-- [ ] 💳 👤 First live test (~1 min): confirm all 5 signals arrive and the frame rate holds ≥ 25 fps
+- [x] 💳 👤 First live test: key works, expressions + blinks arrive; frame rate too low (10/s) → SDK stopped
+- [x] Fix: SDK captures the camera natively in the main process (no frame copying)
+- [ ] 💳 👤 Second live test (90 s): good front lighting, confirm pulse, breathing and HRV arrive
 - [ ] 💳 👤 Record 2–3 sample sessions (~3–5 min each, incl. imagining options)
 
 ## Phase 2 — Replay mode + full flow (Nov 13–15)
@@ -78,3 +80,4 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 | Date | Used for | Credits | Left |
 |---|---|---|---|
 | — | start | 0 | 100 |
+| Nov 11 | First live test (18 s, stopped by low frame rate) | ~1 | ~99 (confirm on dashboard) |
