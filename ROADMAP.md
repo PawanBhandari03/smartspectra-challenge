@@ -11,9 +11,9 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Lock idea (Gut Check) and tech (Electron + Node SDK)
 - [x] Write OVERVIEW.md and ROADMAP.md
 - [x] Create project skeleton (`package.json`, `.gitignore`, `.env.example`)
-- [ ] 👤 Install dependencies (`npm install`) — Electron + SDK
-- [ ] 👤 Put API key into `.env`
-- [ ] 👤 Share the GitHub repo URL so the project can be pushed
+- [x] 👤 Install dependencies (`npm install`) — Electron 45 + SDK 3.5
+- [x] 👤 Put API key into `.env`
+- [x] 👤 Share the GitHub repo URL and push the first commits
 
 ## Phase 1 — First live test (Nov 11–12)
 - [ ] Minimal Electron window that opens
