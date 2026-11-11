@@ -50,6 +50,8 @@ main {
 .card p { margin: 6px 0 0; }
 
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row.spread { justify-content: space-between; margin-bottom: 10px; }
+.row.spread h2 { margin: 0; }
 
 button, select {
   background: #222734;

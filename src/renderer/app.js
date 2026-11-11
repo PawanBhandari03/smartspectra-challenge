@@ -21,7 +21,24 @@ const ui = {
   vHrv: $('vHrv'), vHrvQ: $('vHrvQ'), vStress: $('vStress'), vExpr: $('vExpr'), vExprQ: $('vExprQ'),
   vBlinks: $('vBlinks'), vBlinkRate: $('vBlinkRate'),
   procStatus: $('procStatus'), packets: $('packets'), validation: $('validation'), log: $('log'),
+  copyLog: $('copyLog'),
 };
+
+// Copies oldest-first so it reads top to bottom, plus the current vitals snapshot.
+async function copyLog() {
+  const lines = ui.log.textContent.trim().split('\n').reverse();
+  const snapshot = `Vitals on screen: pulse ${ui.vPulse.textContent} · breathing ${ui.vBreath.textContent} · HRV ${ui.vHrv.textContent}`
+    + ` · stress ${ui.vStress.textContent} · expression ${ui.vExpr.textContent} · blinks ${ui.vBlinks.textContent}`
+    + ` · status ${ui.procStatus.textContent} · guidance ${ui.validation.textContent}`;
+  try {
+    await navigator.clipboard.writeText(`${lines.join('\n')}\n${snapshot}\n`);
+    ui.copyLog.textContent = 'Copied ✓';
+  } catch (err) {
+    ui.copyLog.textContent = 'Copy failed';
+    console.log(`Copy failed: ${err.message}`);
+  }
+  setTimeout(() => { ui.copyLog.textContent = 'Copy log'; }, 1500);
+}
 
 const bridge = window.gutCheck.sdk;
 let info = { hasKey: false };
@@ -466,6 +483,7 @@ async function refreshRecordings(select) {
 
 // ---------- Wire up ----------
 
+ui.copyLog.onclick = copyLog;
 ui.cameraSelect.onchange = selectCamera;
 ui.refreshCameras.onclick = refreshCameras;
 ui.openCam.onclick = openCamera;
