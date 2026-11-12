@@ -66,7 +66,7 @@ For live measurement you need a free Presage API key from [physiology.presagetec
 2. **Consent and camera check.** A free preview checks your framing and frame rate before anything is measured.
 3. **The session (~4 minutes).** A calm baseline, then each option twice in a mirrored order. Every 10 seconds a new prompt helps you picture living that option ("a month in, how do your evenings feel?"). Read silently and imagine.
 4. **Your mirror.** Pulse through the session, the prompts after which your pulse rose most, reflection questions, and (only with strong evidence) the option your body stayed calmer with.
-5. **Your journal.** Every check is saved locally. Later you can record what you actually decided and compare it with what your body did.
+5. **My decisions.** Every check is saved locally. Later you can record what you actually decided and compare it with what your body did.
 
 ![Session timeline](docs/images/session-timeline.svg)
 
@@ -127,7 +127,7 @@ Main process (SDK, camera, storage, encrypted key) · context-isolated preload b
 - **Video never leaves the app.** The SDK processes frames on your computer. CrossRoads saves only your two options, phase timings and numbers (pulse, breathing, blinks, expression scores). Never video.
 - **Stored locally only**: `%APPDATA%\crossroads` (installed app). No accounts, no analytics, no AI services, no other network requests by CrossRoads.
 - **SDK network use:** according to Presage, the SDK contacts their servers to check the API key and credits. SDK telemetry is switched off. We have not measured the SDK's traffic ourselves.
-- **Delete any time:** one session in the Journal, or everything in Settings → *Delete all my data*. The API key can be removed in Settings.
+- **Delete any time:** one session in My decisions, or everything in Settings → *Delete all my data*. The API key can be removed in Settings.
 - **Not medical.** A general wellness reflection tool; no diagnosis, no treatment, no medical decisions. For reflecting on your own decisions only, never for measuring other people.
 
 Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
@@ -147,7 +147,7 @@ Full details: [docs/PRIVACY.md](docs/PRIVACY.md).
 **Path 3 · A full check (5 minutes, ~8 credits)**
 1. **Begin a check** → enter two options (try "A quiet afternoon at the beach" / "Giving a speech to 1,000 people with no preparation") → consent → pick your camera → **Begin session**.
 2. Sit back, face the light, read the prompts silently and really imagine each scene → *settle, calm baseline, four visits, ~4 minutes*.
-3. → *Your mirror: a headline, both options' pulse, the timeline, reaction moments and questions. The session appears in the Journal.*
+3. → *Your mirror: a headline, both options' pulse, the timeline, reaction moments and questions. The session appears in My decisions.*
 
 ## Run from source
 
@@ -199,7 +199,7 @@ npm start
 | Criterion or category | Where to see it |
 |---|---|
 | **Use of the underlying technology** | Native SDK capture in the main process, 7 metrics requested, validation status turned into guidance, filters for the SDK's real behaviour (warm-up, spikes, confidence), a live preview from `videoOutput`: [SDK-NOTES](docs/SDK-NOTES.md), [ARCHITECTURE](docs/ARCHITECTURE.md) |
-| **Usability and UX** | Four-minute guided sessions, a journal-style design, plain-language guidance, a sample that needs no camera, an installer, the Journal and "What did you decide?" |
+| **Usability and UX** | Four-minute guided sessions, a journal-style design, plain-language guidance, a sample that needs no camera, an installer, the My decisions list and "What did you decide?" |
 | **Originality and creativity** | The only entry comparing two life options; A B B A visits; an honest "didn't pick a side"; tested against null and positive controls, including a repeat that did not replicate: [VALIDATION](docs/VALIDATION.md) |
 | **Best Thoughtful Real-World Use** (prize category) | Consent first, local-only data, deletion, no medical claims, reflection instead of a verdict: [PRIVACY](docs/PRIVACY.md) |
 

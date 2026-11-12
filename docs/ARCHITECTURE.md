@@ -40,7 +40,7 @@ The SDK runs **in the main process** because the SDK's other Electron mode (rend
 | [`src/core/vitals.js`](../src/core/vitals.js) | Decodes SDK protobuf packets into pulse, breathing, HRV, expression scores, blinks; `BlinkCounter` de-duplicates overlapping packets |
 | [`src/core/session.js`](../src/core/session.js) | `buildPlan` (A B B A visits, prompts) and `SessionRunner` (phase clock, settle gate, time limits, time-series collection, scripted replay) |
 | [`src/core/analysis.js`](../src/core/analysis.js) | Reading filters, per-visit medians, the verdict rule, reaction moments. A pure function of the saved session JSON |
-| [`src/renderer/app.js`](../src/renderer/app.js) | All screens: welcome, options, consent, camera check, session, results, journal, settings, sample |
+| [`src/renderer/app.js`](../src/renderer/app.js) | All screens: welcome, options, consent, camera check, session, results, my decisions, settings, sample |
 | [`src/renderer/timeline.js`](../src/renderer/timeline.js) | The pulse-over-time SVG chart with hover tooltips |
 | [`src/renderer/lab.*`](../src/renderer/lab.js) | Signal Lab: developer page for raw signals, short tests and raw replays |
 | [`scripts/`](../scripts) | `build.js` (esbuild bundles), `start.js` (launch), `analyze-session.js` (prints any session's analysis), `make-icon.js` |
@@ -85,7 +85,7 @@ flowchart LR
     SDK -. 320 px preview .-> UI
 ```
 
-The analysis only ever reads the saved session JSON, so the same function powers the live result, the Journal, the bundled sample and `npm run analyze`.
+The analysis only ever reads the saved session JSON, so the same function powers the live result, My decisions, the bundled sample and `npm run analyze`.
 
 ![Verdict flow](images/verdict-flow.svg)
 
@@ -127,7 +127,7 @@ Everything the window can do, and nothing more:
 | `sdk:start`, `sdk:stop`, `sdk:destroy`, `sdk:readiness` | measurement lifecycle |
 | `sdk:event`, `sdk:preview` | main → window: SDK events, preview pixels |
 | `recording:begin`, `recording:append` | stream the raw recording |
-| `session:save`, `session:list`, `session:read`, `session:setChoice`, `session:delete` | the Journal |
+| `session:save`, `session:list`, `session:read`, `session:setChoice`, `session:delete` | My decisions (the saved list) |
 | `sample:read` | the bundled sample session |
 | `settings:get`, `settings:saveKey`, `settings:removeKey` | API key (encrypted) |
 | `data:openFolder`, `data:deleteAll` | data folder and deletion |

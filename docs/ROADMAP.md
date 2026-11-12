@@ -58,12 +58,12 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Visual design: colour brand, top bar + navigation, new welcome page, coloured signal tiles
 - [x] Session screen with the Signal Lab layout: live camera, live vitals, session log, focus mode
 - [ ] Optional AI reflection (Presage "insights", free)
-- [x] Session history: reopen past sessions (the "Journal")
+- [x] Session history: reopen past sessions (now called "My decisions")
 - [x] Bundled sample session (beach vs speech, camera name redacted): real results + scripted replay, no camera or key needed
 - [x] Automated tests (21, `npm test`) + GitHub Actions CI
 - [x] Plausibility gate for impossible pulse jumps (all real verdicts unchanged)
 - [x] Settings: own Presage key stored encrypted (safeStorage); data folder; delete one session or all data
-- [x] "What did you decide?" saved to the journal
+- [x] "What did you decide?" saved to My decisions
 - [x] Reduced-motion support
 - [x] Windows installer + portable exe (`npm run dist` → `release/`), checked: no key, no personal data inside, SDK loads
 - [x] 👤 Installed it: sample OK, key saved in Settings, 30 s Signal Lab live test OK, recording saved to `%APPDATA%\gut-check` (Nov 12)

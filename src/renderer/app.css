@@ -133,7 +133,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 1
 /* ---------- Welcome ---------- */
 
 .hero { max-width: 760px; }
-.hand-line { width: 300px; height: 30px; color: var(--accent); margin: 4px 0 18px; display: block; }
+.hand-line { width: 340px; height: 52px; margin: 6px 0 18px; display: block; overflow: visible; }
 .steps { list-style: none; padding: 0; margin: 0 0 36px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--rule-strong); border-bottom: 1px solid var(--rule-strong); }
 .steps li { display: flex; gap: 10px; padding: 16px 18px 16px 0; }
 .steps li + li { padding-left: 18px; border-left: 1px solid var(--rule); }
@@ -318,7 +318,7 @@ table.results th { color: var(--muted); font-weight: 500; font-size: 13px; }
 table.results td.num { font-variant-numeric: tabular-nums; }
 .up { color: var(--warn); }
 
-/* ---------- Journal (history) ---------- */
+/* ---------- My decisions (history) ---------- */
 
 .history-list { display: grid; border-top: 1px solid var(--rule-strong); }
 .history-item { display: grid; grid-template-columns: 1fr auto auto; gap: 16px; align-items: center; text-align: left; width: 100%; border-bottom: 1px solid var(--rule); padding: 18px 4px; cursor: pointer; }

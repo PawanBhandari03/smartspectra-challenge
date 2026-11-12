@@ -20,7 +20,7 @@
     </button>
     <nav>
       <button data-go="options" class="nav">New check</button>
-      <button data-go="history" class="nav">Journal</button>
+      <button data-go="history" class="nav">My decisions</button>
       <a href="lab.html" class="nav">Signal Lab</a>
       <button data-go="settings" class="nav">Settings</button>
       <span id="todayDate" class="today"></span>
@@ -32,9 +32,14 @@
     <div class="center hero">
       <p class="eyebrow">For the decisions you keep going back and forth on</p>
       <h1>Your body votes<br>on <em>your</em> decisions.</h1>
-      <svg class="hand-line" viewBox="0 0 420 40" aria-hidden="true">
-        <path d="M2 24c40-1 78 2 118 0 9-.5 12-3 15-9 2.5-5 5-6 7 1l6 17c2 5 4 5 6-1l7-25c1.5-5 4-5 5.5 0l4 12c1.5 4 4 5 8 4.5 50-2 120 1 245-1"
-              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg class="hand-line" viewBox="0 0 420 64" aria-hidden="true">
+        <!-- a heartbeat that reaches a crossroads and splits into the two options -->
+        <path d="M2 32h104l9-15 10 30 9-24 6 9h30" fill="none" stroke="#2f5d46" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M176 32c36 0 46-20 96-20h130" fill="none" stroke="#2f62a8" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M176 32c36 0 46 20 96 20h130" fill="none" stroke="#c8612e" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="408" cy="12" r="4" fill="#2f62a8"/>
+        <circle cx="408" cy="52" r="4" fill="#c8612e"/>
+        <circle cx="176" cy="32" r="3.5" fill="#1f1d1a"/>
       </svg>
       <p class="lead">Picture living each of your two options while your camera quietly reads your pulse, blinks and
         expressions. Afterwards, see where your body reacted, moment by moment, and what that might mean.</p>
@@ -242,11 +247,11 @@
 
       <div id="choiceCard" class="card choice hidden">
         <h3>What did you decide?</h3>
-        <p class="muted">Come back once you've made the decision. Over time your Journal shows whether your choice matched what your body did.</p>
+        <p class="muted">Come back once you've made the decision. Over time your decisions list shows whether your choice matched what your body did.</p>
         <div id="choiceButtons" class="row"></div>
         <textarea id="choiceNote" rows="2" maxlength="500" placeholder="Optional: how do you feel about it now?"></textarea>
         <div class="row">
-          <button id="saveChoice" class="primary">Save to journal</button>
+          <button id="saveChoice" class="primary">Save</button>
           <span id="choiceSaved" class="muted"></span>
         </div>
       </div>
@@ -259,7 +264,7 @@
       </details>
 
       <div class="actions">
-        <button class="ghost" data-go="history">← Back to journal</button>
+        <button class="ghost" data-go="history">← Back to my decisions</button>
         <button id="newSession" class="primary">New check</button>
       </div>
     </div>
@@ -268,7 +273,7 @@
   <!-- 7. History -->
   <section id="screen-history" class="screen">
     <div class="center wide">
-      <p class="eyebrow">Journal</p>
+      <p class="eyebrow">My decisions</p>
       <h2>Your past decisions</h2>
       <p class="lead">Every decision you've checked, newest first. Open one to read its mirror again. Everything stays on this computer.</p>
       <div id="historyList" class="history-list"></div>

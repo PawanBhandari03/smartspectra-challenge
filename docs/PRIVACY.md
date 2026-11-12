@@ -38,7 +38,7 @@ CrossRoads reads signals from a camera, so this page says exactly what happens w
 ## Retention and deletion
 
 - Data is kept until **you** delete it. Nothing expires or syncs.
-- **Journal → Delete** removes one session and its paired recording.
+- **My decisions → Delete** removes one session and its paired recording.
 - **Settings → Delete all my data** removes every session and recording.
 - **Settings → Remove** deletes the stored API key.
 - Uninstalling the app leaves the data folder in place; delete it by hand if you want everything gone.

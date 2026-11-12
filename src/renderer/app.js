@@ -9,6 +9,10 @@ const { REQUESTED_METRICS } = require('../core/metrics');
 const $ = (id) => document.getElementById(id);
 const bridge = window.gutCheck.sdk;
 
+// Unexpected errors go to the log (visible in the terminal when run from source).
+window.addEventListener('error', (e) => console.log(`Screen error: ${e.message} at ${e.filename}:${e.lineno}`));
+window.addEventListener('unhandledrejection', (e) => console.log(`Unhandled: ${e.reason?.stack || e.reason}`));
+
 const CAMERA_PREF_KEY = 'gutcheck.cameraName';
 
 // Friendly versions of the SDK's ValidationCode guidance.
@@ -642,7 +646,7 @@ function choiceLabel(session) {
   return c.optionIndex == null ? 'still deciding' : `"${session.options[c.optionIndex].label}"`;
 }
 
-// "What did you decide?": only for real sessions saved in the journal.
+// "What did you decide?": only for real sessions saved in My decisions.
 function renderChoice(result, sessionName) {
   const card = $('choiceCard');
   const show = !!sessionName && !result.demo && !result.sample;
