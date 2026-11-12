@@ -25,7 +25,7 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Fix: SDK captures the camera natively in the main process (no frame copying)
 - [x] Camera picker (phone camera via Windows Phone Link works: steady 30 fps)
 - [x] 💳 👤 Second live test (90 s): all signals arrive; HRV only after ~60 s (→ whole-session bonus, not per option)
-- [ ] 💳 👤 Record 2–3 real Gut Check sessions — **moved to after Phase 2**, so the recordings include the real phase timings (saves credits)
+- [x] 💳 👤 Record 2–3 real Gut Check sessions — done in Phases 2–3 (see the tests below)
 
 ## Phase 2 — Replay mode + full flow (Nov 13–15)
 - [x] Replay mode: play a recorded session as if live (0 credits) — built early in Phase 1
@@ -39,8 +39,8 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Recording streamed to disk every 2 s; session JSON with full time series saved
 - [x] Stop measurement immediately when the session ends
 - [x] First results table (changes vs baseline)
-- [ ] 💳 👤 **Null test:** a real session with two near-identical options (e.g. "tea" vs "coffee") → measures the noise floor for "too close to call"
-- [ ] 💳 👤 **Real decision test:** a session with a decision that matters to you
+- [x] 💳 👤 **Null test:** tea vs coffee (Nov 11 night, then again with the ABBA design on Nov 12)
+- [x] 💳 👤 **Real decision test:** stay in my city vs move to Bangalore (Nov 11 night, then ABBA on Nov 12)
 
 ## Phase 3 — Scoring + results ("a mirror, not a verdict") — done early (Nov 11)
 - [x] Control experiment (tea vs coffee) + real decision → single visits can't tell options apart (see OVERVIEW)
@@ -66,20 +66,23 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] "What did you decide?" saved to the journal
 - [x] Reduced-motion support
 - [x] Windows installer + portable exe (`npm run dist` → `release/`), checked: no key, no personal data inside, SDK loads
-- [ ] 👤 Install it and run one 30 s live test with the key added in Settings
-- [ ] 👤 Publish GitHub Release v1.0 (after the README is written)
-- [ ] 👤 Make the GitHub repo **public** before submitting (the rules require a public repo; it is private now)
+- [x] 👤 Installed it: sample OK, key saved in Settings, 30 s Signal Lab live test OK, recording saved to `%APPDATA%\gut-check` (Nov 12)
+- [x] Error handling: guidance hints (too dark, face lost, move closer…), settle phase gives up after 90 s and says why, stops on SDK errors, keeps partial sessions, low-confidence/spike filtering, "not enough signal" verdict
+- [x] Icon finalised (journal logo, taskbar + installer)
+- [ ] 👤 Confirm the final app name ("Gut Check")
 - Validation sessions are backed up outside the repo in `Dev/Projects/gutcheck-backup-2026-11-12` (test "Delete" only in the installed copy)
-- [ ] Error handling: bad lighting, face lost, low frame rate
-- [ ] App name + icon finalised 👤
 
-## Phase 5 — Real tests (Nov 20)
-- [ ] 💳 👤 2–3 full live runs end-to-end
-- [ ] Fix what breaks
-- [ ] Optional: Windows installer (`.exe`) for judges
+## Phase 5 — Real tests
+- [x] 💳 👤 3 full live ABBA sessions end-to-end: control (tea/coffee), real decision (city/Bangalore), positive control (beach/speech)
+- [x] Fix what broke: phone camera instead of laptop (fps), night lighting ("sad" bias), SDK spikes after low confidence, single-visit drift → ABBA
+- [x] Windows installer (`.exe`) for judges, tested installed
+- [ ] 💳 👤 One full Gut Check in the **installed** app with the latest code (session flow was refactored after the last full live run). Can double as demo-video take 1.
+- Known limit: the phone camera via Phone Link shows blinks ~5 s late on screen (Wi-Fi video buffering; the SDK itself reports blinks within ~30 ms). Doesn't affect results.
 
 ## Phase 6 — Submission (Nov 21–22)
-- [ ] README.md: what it is, screenshots, setup steps
+- [ ] README.md: what it is, screenshots, setup steps, "How judges can test", SmartScreen note
+- [ ] 👤 Publish GitHub Release v1.0 with the installer + portable exe
+- [ ] 👤 Make the GitHub repo **public** (rules require it; it is private now)
 - [ ] 💳 👤 Record demo video (2–3 min) — a real decision, body reacting live
 - [ ] 👤 Upload video (YouTube, unlisted or public)
 - [ ] Draft the DEV.to post (story, science, how it works, honest limits)
@@ -103,5 +106,8 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 |---|---|---|---|
 | — | start | 0 | 100 |
 | Nov 11 | First live test (18 s) + second live test (90 s) | 3 | **97** (dashboard) |
+| Nov 11–12 | Lab tests, 2 night sessions, 3 ABBA sessions, installed-app test | 52 | **45** (dashboard, Nov 12 4:19 PM) |
+
+**Budget for the rest:** one full installed-app session (~8, can be video take 1) + one more video take (~8) + ~10 buffer. No other live tests.
 
 A 90 s test costs about 2–3 credits, cheaper than the "1 credit per 30 s from the click" estimate (startup time seems not to count).
