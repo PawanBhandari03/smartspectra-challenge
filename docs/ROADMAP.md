@@ -68,6 +68,7 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Windows installer + portable exe (`npm run dist` → `release/`), checked: no key, no personal data inside, SDK loads
 - [x] 👤 Installed it: sample OK, key saved in Settings, 30 s Signal Lab live test OK, recording saved to `%APPDATA%\gut-check` (Nov 12)
 - [x] Error handling: guidance hints (too dark, face lost, move closer…), settle phase gives up after 90 s and says why, stops on SDK errors, keeps partial sessions, low-confidence/spike filtering, "not enough signal" verdict
+- [x] UI polish (Nov 12): "Journal" renamed "My decisions"; welcome heartbeat splits into two paths (the two options); right-click cut/copy/paste menu
 - [x] Icon finalised (journal logo, taskbar + installer)
 - [ ] 👤 Confirm the final app name ("Gut Check")
 - Validation sessions are backed up outside the repo in `Dev/Projects/gutcheck-backup-2026-11-12` (test "Delete" only in the installed copy)
