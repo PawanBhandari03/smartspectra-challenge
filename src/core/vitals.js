@@ -17,7 +17,7 @@ function latestMeasurement(list) {
   return { value: m.value ?? null, confidence: m.confidence ?? 0, stable: !!m.stable, ts: toNum(m.timestamp) };
 }
 
-// Pulls the values Gut Check uses out of one decoded SDK packet.
+// Pulls the values CrossRoads uses out of one decoded SDK packet.
 function extractSample(m) {
   const hrvList = m.cardio?.hrv;
   const h = hrvList && hrvList.length ? hrvList[hrvList.length - 1] : null;

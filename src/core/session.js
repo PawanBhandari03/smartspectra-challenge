@@ -52,7 +52,7 @@ function optionPrompts(option, visit) {
 // (chosen at random): the body drifts during a session (usually more aroused or more relaxed over
 // time), and a mirrored order spreads that drift evenly over both options.
 function buildPlan(options, { timing = TIMING, rand = Math.random, order: fixedOrder = null } = {}) {
-  if (options.length !== 2) throw new Error('Gut Check compares exactly two options');
+  if (options.length !== 2) throw new Error('CrossRoads compares exactly two options');
   const [first, second] = rand() < 0.5 ? [0, 1] : [1, 0];
   const order = fixedOrder || [first, second, second, first];
   const visitCount = [0, 0];

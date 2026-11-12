@@ -1,4 +1,4 @@
-// MetricType codes Gut Check requests (values from @smartspectra/node-sdk MetricType).
+// MetricType codes CrossRoads requests (values from @smartspectra/node-sdk MetricType).
 // Landmarks (11) and the arterial pressure trace (16) are left out to keep processing light.
 const REQUESTED_METRICS = [
   0,  // CHEST_BREATHING

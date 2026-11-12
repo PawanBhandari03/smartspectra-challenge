@@ -171,7 +171,7 @@ ipcMain.handle('recording:append', (_e, name, text) => {
   fs.appendFileSync(safeRecordingPath(name), String(text), 'utf8');
 });
 
-// Gut Check session results: options, phase timings and the full vitals time series.
+// CrossRoads session results: options, phase timings and the full vitals time series.
 function safeSessionPath(name) {
   const base = path.basename(String(name));
   if (!base.endsWith('.json')) throw new Error('Not a session file');
@@ -273,7 +273,7 @@ function createWindow() {
     height: 860,
     backgroundColor: '#f4efe6',
     icon: path.join(appRoot, 'assets/icon.png'),
-    title: 'Gut Check',
+    title: 'CrossRoads',
     webPreferences: {
       preload: path.join(appRoot, 'dist/preload.js'),
       contextIsolation: true,
@@ -308,7 +308,7 @@ function createWindow() {
 }
 
 // Groups the window under its own taskbar entry and icon on Windows (instead of Electron's).
-if (process.platform === 'win32') app.setAppUserModelId('com.pawanbhandari.gutcheck');
+if (process.platform === 'win32') app.setAppUserModelId('com.pawanbhandari.crossroads');
 
 app.whenReady().then(loadSavedKey).then(createWindow);
 

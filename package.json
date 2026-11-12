@@ -1,7 +1,7 @@
 {
-  "name": "gut-check",
+  "name": "crossroads",
   "version": "0.1.0",
-  "description": "Your body votes on your decisions. A decision-reflection journal that reads pulse, blinks and expressions from your webcam with the Presage SmartSpectra SDK.",
+  "description": "CrossRoads: a decision moment. Imagine living each of two options while your webcam reads your pulse, blinks and expressions (Presage SmartSpectra SDK); see honestly where your body reacted.",
   "main": "src/main/main.js",
   "scripts": {
     "build": "node scripts/build.js",
@@ -25,8 +25,8 @@
   },
   "homepage": "https://github.com/PawanBhandari03/smartspectra-challenge",
   "build": {
-    "appId": "com.pawanbhandari.gutcheck",
-    "productName": "Gut Check",
+    "appId": "com.pawanbhandari.crossroads",
+    "productName": "CrossRoads",
     "copyright": "Copyright (c) 2026 Pawan Bhandari",
     "directories": {
       "output": "release"
@@ -64,11 +64,11 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "GutCheck-Setup-${version}.exe",
-      "shortcutName": "Gut Check"
+      "artifactName": "CrossRoads-Setup-${version}.exe",
+      "shortcutName": "CrossRoads"
     },
     "portable": {
-      "artifactName": "GutCheck-Portable-${version}.exe"
+      "artifactName": "CrossRoads-Portable-${version}.exe"
     },
     "electronFuses": {
       "runAsNode": false,

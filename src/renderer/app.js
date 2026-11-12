@@ -94,7 +94,7 @@ $('removeKey').onclick = async () => {
 $('openDataFolder').onclick = () => window.gutCheck.data.openFolder();
 
 $('deleteAllData').onclick = async () => {
-  if (!confirm('Delete all your Gut Check sessions and recordings from this computer? This cannot be undone.')) return;
+  if (!confirm('Delete all your CrossRoads sessions and recordings from this computer? This cannot be undone.')) return;
   await window.gutCheck.data.deleteAll();
   $('dataMessage').textContent = 'All sessions and recordings were deleted.';
 };
@@ -700,7 +700,7 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
   $('method').textContent = 'How this works: Presage SmartSpectra reads your pulse from tiny colour changes in your face through the camera. '
     + 'Each option is visited twice in a mirrored order (A B B A), so the slow drift of a body during a session affects both options equally. '
     + `Only stable readings with confidence ${MIN_CONFIDENCE}+ count, skipping the first 15 s of each visit while the pulse average catches up. `
-    + `A resting pulse wobbles 6 to 9 bpm from minute to minute by itself, so Gut Check only names a calmer option when both rounds agree by more than ${MIN_ROUND_GAP_BPM} bpm. `
+    + `A resting pulse wobbles 6 to 9 bpm from minute to minute by itself, so CrossRoads only names a calmer option when both rounds agree by more than ${MIN_ROUND_GAP_BPM} bpm. `
     + 'A wellness reflection tool, not medical advice.';
 
   const table = document.createElement('table');
@@ -935,7 +935,7 @@ async function renderHistory() {
   if (!list.children.length) {
     const empty = document.createElement('p');
     empty.className = 'empty';
-    empty.textContent = 'No sessions yet. Start a Gut Check to see it here.';
+    empty.textContent = 'No sessions yet. Start a check to see it here.';
     list.appendChild(empty);
   }
 }
