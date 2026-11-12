@@ -13,7 +13,7 @@ Checks that need a real camera, a real API key or the installed app, with the da
 | 5 | Settings → **Open data folder** | `%APPDATA%\crossroads` opens, recording present | ✅ Nov 12 (installed; the folder was `gut-check` before the rename) |
 | 6 | Full check: two options → consent → camera check → session | Settle → baseline → 4 visits → results; session in My decisions | ✅ Nov 12 (dev build, 3 sessions; installed CrossRoads 1.0.0, 1 session) |
 | 7 | Results → **What did you decide?** → Save | Choice shown on the result and in My decisions | ✅ Nov 12 (installed; choice saved in the session file) |
-| 8 | My decisions → **Delete** one session | Session and its recording removed | ⏳ installed final build |
+| 8 | My decisions → **Delete** one session | Session and its recording removed | ✅ Nov 12 (installed 1.0.0: confirmation names both options and the date, session removed) |
 | 9 | Bad lighting / face out of frame during settle | Guidance hint shown; after 90 s the session stops and says which check failed | ✅ Nov 11 (replay of a failing recording) |
 | 10 | Installer contents | No API key, no sessions or recordings inside; SDK loads | ✅ Nov 12 (scripted scan) |
 

@@ -891,7 +891,13 @@ async function renderHistory() {
     vs.textContent = 'or';
     const second = document.createElement('span');
     second.textContent = session.options[1].label;
-    title.append(swatch(OPTION_COLORS[0]), first, vs, swatch(OPTION_COLORS[1]), second);
+    const group = (i, label) => {
+      const g = document.createElement('span');
+      g.className = 'opt-group';
+      g.append(swatch(OPTION_COLORS[i]), label);
+      return g;
+    };
+    title.append(group(0, first), vs, group(1, second));
     if (session.demo) {
       const chip = document.createElement('span');
       chip.className = 'chip';
