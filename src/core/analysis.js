@@ -29,13 +29,22 @@ function median(values) {
 // stable (Nov 12: ~93-97 bpm in a person resting at ~62-78), so they are skipped while it re-settles.
 const DROPOUT = { gapMs: 4000, resettleMs: 10000 };
 
+// A resting heart can't change its 12 s average faster than this; bigger jumps are camera artifacts.
+const PLAUSIBLE = { minJumpBpm: 8, bpmPerSecond: 3.5 };
+
 function cleanReadings(points) {
   const ok = points.filter((p) => p.s && p.c >= MIN_CONFIDENCE);
   const out = [];
   let resumeAt = -Infinity;
   ok.forEach((p, i) => {
     if (i > 0 && p.t - ok[i - 1].t > DROPOUT.gapMs) resumeAt = p.t + DROPOUT.resettleMs;
-    if (p.t >= resumeAt) out.push(p);
+    if (p.t < resumeAt) return;
+    const prev = out[out.length - 1];
+    if (prev) {
+      const allowed = Math.max(PLAUSIBLE.minJumpBpm, (PLAUSIBLE.bpmPerSecond * (p.t - prev.t)) / 1000);
+      if (Math.abs(p.v - prev.v) > allowed) return;
+    }
+    out.push(p);
   });
   return out;
 }
