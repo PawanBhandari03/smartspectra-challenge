@@ -49,8 +49,9 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Verdict calibrated on real data: names a calmer option only if both rounds agree by > max(wobble, 6 bpm); otherwise "Your body didn't pick a side"
 - [x] Decision with Pawan: **a mirror, not a verdict**
 - [x] Results screen: option cards, pulse timeline (hover shows the prompt on screen), "moments your body reacted", reflection questions, method + limits
-- [ ] 💳 👤 ABBA null test (tea vs coffee) → should say "didn't pick a side"
-- [ ] 💳 👤 ABBA real decision session
+- [x] 💳 👤 ABBA null test (tea vs coffee) → "didn't pick a side" ✓ (Nov 12)
+- [x] 💳 👤 ABBA real decision session → "didn't pick a side" (rounds inconsistent) (Nov 12)
+- [x] Fix: ignore readings for 10 s after a signal dropout (SDK spikes on resume)
 
 ## Phase 4 — Polish (Nov 18–19)
 - [x] Visual design: colour brand, top bar + navigation, new welcome page, coloured signal tiles

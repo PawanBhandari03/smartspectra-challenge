@@ -218,6 +218,16 @@ smartspectra-challenge/
 
 **Calibration on real data:** cutting the two sessions' pulse into fake A/B/B/A sessions (labels meaningless) showed one-minute blocks differing by **6–9 bpm by pure chance**. A rule of "both rounds agree and beat the visit-to-visit wobble" picked a fake winner ~87% of the time; requiring **each round to beat max(wobble, 6 bpm)** brought that to ~26%. That rule is used now, but 26% is still too high to call it a reliable vote (rough estimate: 2 sessions, overlapping windows).
 
+### Validation run (Nov 12, daylight, ABBA design)
+
+| Session | Round 1 | Round 2 | Result |
+|---|---|---|---|
+| Control: "drink tea" vs "drink coffee" | tea −5.0 bpm | tea −3.9 bpm | **Didn't pick a side** ✓ (a looser "beat the wobble" rule would have wrongly said "calmer with tea") |
+| Real: "stay in my city" vs "move to Bangalore" | Bangalore +2.3 | Bangalore +9.0 | **Didn't pick a side** (rounds inconsistent) |
+
+- Daylight made a big difference: steady 30 fps, face OK the whole session, 94% stable pulse readings, mean confidence ~80 (vs ~50 at night). Expressions read "neutral" 86–92% (at night the same face read "sad"): the "sad" bias was the lighting.
+- Found and fixed an artifact: after a short signal dropout, the SDK briefly reported ~97 bpm for someone resting at ~62. Readings in the 10 s after any dropout are now ignored (`cleanReadings` in `analysis.js`); this removed a fake "−23 bpm calmest moment" and a fake "+11 bpm" moment.
+
 **Product decision (Nov 11): "a mirror, not a verdict".** The results screen shows *what your body did* rather than declaring a winner:
 - two option cards (average pulse, each visit, blinks); an option is tagged "Calmer" only when the strict rule above passes
 - a pulse timeline (6-second rolling median of reliable readings) with the four visits as coloured bands; hovering shows the prompt that was on screen

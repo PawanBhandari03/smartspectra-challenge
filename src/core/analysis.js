@@ -25,8 +25,29 @@ function median(values) {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
+// After the signal drops out, the SDK's first readings can be wildly off (Nov 12: ~97 bpm for a few
+// seconds in a person resting at ~62), so readings right after a gap are skipped while it re-settles.
+const DROPOUT = { gapMs: 4000, resettleMs: 10000 };
+
+function cleanReadings(points) {
+  const ok = points.filter((p) => p.s && p.c >= MIN_CONFIDENCE);
+  const out = [];
+  let resumeAt = -Infinity;
+  ok.forEach((p, i) => {
+    if (i > 0 && p.t - ok[i - 1].t > DROPOUT.gapMs) resumeAt = p.t + DROPOUT.resettleMs;
+    if (p.t >= resumeAt) out.push(p);
+  });
+  return out;
+}
+
+const cleanCache = new WeakMap();
+function clean(points) {
+  if (!cleanCache.has(points)) cleanCache.set(points, cleanReadings(points));
+  return cleanCache.get(points);
+}
+
 function reliable(points, start, end) {
-  return points.filter((p) => p.t >= start && p.t < end && p.s && p.c >= MIN_CONFIDENCE).map((p) => p.v);
+  return clean(points).filter((p) => p.t >= start && p.t < end).map((p) => p.v);
 }
 
 function blockStats(series, block) {
@@ -132,7 +153,7 @@ function analyzeSession(session) {
 
 // Reliable pulse readings for charting: [{ t, v }].
 function pulseTrace(session) {
-  return session.series.pulse.filter((p) => p.s && p.c >= MIN_CONFIDENCE).map((p) => ({ t: p.t, v: p.v }));
+  return clean(session.series.pulse).map((p) => ({ t: p.t, v: p.v }));
 }
 
 module.exports = { analyzeSession, pulseTrace, LAGS, MIN_CONFIDENCE, MIN_PULSE_READINGS, MIN_ROUND_GAP_BPM, MOMENT };
