@@ -200,6 +200,14 @@ smartspectra-challenge/
 | 2026-11-12 | **Visual redesign:** colour brand (violet→pink), top bar with logo + navigation, new welcome page. The session screen now has the Signal Lab layout: live camera, live tiles (pulse with a heart beating at your rate, breathing, blinks, expression), session log with copy, and an optional focus mode. **History** screen to reopen past sessions. |
 | 2026-11-12 | Restyled to a **clean, professional light theme** (Pawan: the violet/pink gradients looked AI-made): white surfaces, near-black text and buttons, one deep-green accent, no gradients or glows. Options stay blue/orange (checked for colour-blind safety). Signal Lab restyled to match. Behaviour unchanged. |
 | 2026-11-12 | Clean but "boring" → **editorial "decision journal" design**: warm paper background, Newsreader serif (bundled, works offline) for headlines/prompts/results, ink-black buttons, forest-green accent, hairline rules, masthead with today's date, results dated like a letter, History renamed **Journal**. Option colours: ink blue / burnt orange (colour-blind checked). |
+| 2026-11-12 | App icon + masthead logo. Positive control (beach vs speech) passed. Competitor review (54 entries) → matched every strong feature: bundled no-key **sample session** with scripted replay, **21 automated tests + CI**, plausibility gate, **Settings** (encrypted key, data folder, delete all), per-session delete, "What did you decide?", reduced motion, **Windows installer + portable exe** (no secrets inside, verified). |
+
+## How to build the installer
+
+```
+npm run dist
+```
+Creates `release/GutCheck-Setup-<version>.exe` (installer) and `release/GutCheck-Portable-<version>.exe`. The app is packaged unarchived (`asar: false`) because the SDK loads its native DLLs from real file paths; only the Windows SDK runtime is included. Installed copies keep data in `%APPDATA%\Gut Check` and read the Presage key from Settings (encrypted), never from `.env`.
 
 ## The control experiment (Nov 11, two real 6-minute sessions)
 
