@@ -36,7 +36,7 @@
 
 ## Contents
 
-[Try it in one minute](#-try-it-in-one-minute-no-camera-no-key) · [Download](#download) · [How it works](#how-it-works) · [Screenshots](#screenshots) · [How it uses the SDK](#how-it-responds-to-human-signals) · [Validation](#the-honest-part-we-tried-to-fool-our-own-app) · [Architecture](#architecture) · [Consent & data](#consent-and-data-handling) · [How judges can test](#how-judges-can-test) · [Run from source](#run-from-source) · [Troubleshooting](#troubleshooting) · [Limitations](#limitations) · [Judging criteria](#how-it-fits-the-judging-criteria) · [Docs](#documentation)
+[Try it in one minute](#-try-it-in-one-minute-no-camera-no-key) · [Download](#download) · [How it works](#how-it-works) · [Screenshots](#screenshots) · [How it uses the SDK](#how-it-responds-to-human-signals) · [Validation](#the-honest-part-we-tried-to-fool-our-own-app) · [Architecture](#architecture) · [Consent & data](#consent-and-data-handling) · [How judges can test](#how-judges-can-test) · [Run from source](#run-from-source) · [Troubleshooting](#troubleshooting) · [Limitations](#limitations) · [Judging criteria](#how-it-fits-the-judging-criteria-and-prize-categories) · [Docs](#documentation)
 
 ## ⏱ Try it in one minute (no camera, no key)
 
@@ -193,14 +193,14 @@ npm start
 - **Windows only** for the installer; HRV is recorded but not used.
 - **Not a medical device.**
 
-## How it fits the judging criteria
+## How it fits the judging criteria and prize categories
 
-| Criterion | Where to see it |
+| Criterion or category | Where to see it |
 |---|---|
 | **Use of the underlying technology** | Native SDK capture in the main process, 7 metrics requested, validation status turned into guidance, filters for the SDK's real behaviour (warm-up, spikes, confidence), a live preview from `videoOutput`: [SDK-NOTES](docs/SDK-NOTES.md), [ARCHITECTURE](docs/ARCHITECTURE.md) |
 | **Usability and UX** | Four-minute guided sessions, a journal-style design, plain-language guidance, a sample that needs no camera, an installer, the Journal and "What did you decide?" |
 | **Originality and creativity** | The only entry comparing two life options; A B B A visits; an honest "didn't pick a side"; validated with null and positive controls: [VALIDATION](docs/VALIDATION.md) |
-| **Thoughtful real-world use** | Consent first, local-only data, deletion, no medical claims, reflection instead of a verdict: [PRIVACY](docs/PRIVACY.md) |
+| **Best Thoughtful Real-World Use** (prize category) | Consent first, local-only data, deletion, no medical claims, reflection instead of a verdict: [PRIVACY](docs/PRIVACY.md) |
 
 ## Project layout
 

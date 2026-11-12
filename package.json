@@ -1,6 +1,6 @@
 {
   "name": "crossroads",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "CrossRoads: a decision moment. Imagine living each of two options while your webcam reads your pulse, blinks and expressions (Presage SmartSpectra SDK); see honestly where your body reacted.",
   "main": "src/main/main.js",
   "scripts": {

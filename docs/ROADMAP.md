@@ -80,9 +80,15 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - Known limit: the phone camera via Phone Link shows blinks ~5 s late on screen (Wi-Fi video buffering; the SDK itself reports blinks within ~30 ms). Doesn't affect results.
 
 ## Phase 6 — Submission (Nov 21–22)
-- [ ] README.md: what it is, screenshots, setup steps, "How judges can test", SmartScreen note
-- [ ] 👤 Publish GitHub Release v1.0 with the installer + portable exe
+- [x] App renamed to **CrossRoads** (a decision moment)
+- [x] README.md + docs/ (ARCHITECTURE, VALIDATION, SDK-NOTES, PRIVACY, MANUAL-TESTS) with diagrams and screenshots
+- [x] `npm run analyze` so judges can check the sample's numbers
+- [ ] 👤 Decide whether the real decision ("move to Bangalore") may appear in the public docs
+- [ ] Rebuild installer as CrossRoads 1.0.0; 👤 uninstall "Gut Check", install CrossRoads, re-enter the key, open the sample
+- [ ] 👤 Publish GitHub Release v1.0.0: upload only `CrossRoads-Setup-1.0.0.exe` and `CrossRoads-Portable-1.0.0.exe` (not `latest.yml` or `.blockmap`)
 - [ ] 👤 Make the GitHub repo **public** (rules require it; it is private now)
+- [ ] After going public: check the README on GitHub (Mermaid renders, anchors work, CI badge green)
+- [ ] Replace the README placeholders: demo video link, DEV post link
 - [ ] 💳 👤 Record demo video (2–3 min) — a real decision, body reacting live
 - [ ] 👤 Upload video (YouTube, unlisted or public)
 - [ ] Draft the DEV.to post (story, science, how it works, honest limits)

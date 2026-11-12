@@ -207,7 +207,7 @@ smartspectra-challenge/
 ```
 npm run dist
 ```
-Creates `release/GutCheck-Setup-<version>.exe` (installer) and `release/GutCheck-Portable-<version>.exe`. The app is packaged unarchived (`asar: false`) because the SDK loads its native DLLs from real file paths; only the Windows SDK runtime is included. Installed copies keep data in `%APPDATA%\Gut Check` and read the Presage key from Settings (encrypted), never from `.env`.
+Creates `release/CrossRoads-Setup-<version>.exe` (installer) and `release/CrossRoads-Portable-<version>.exe`. The app is packaged unarchived (`asar: false`) because the SDK loads its native DLLs from real file paths; only the Windows SDK runtime is included. Installed copies keep data in `%APPDATA%\crossroads` (`gut-check` before the rename) and read the Presage key from Settings (encrypted), never from `.env`.
 
 ## The control experiment (Nov 11, two real 6-minute sessions)
 

@@ -48,7 +48,7 @@ When confidence dropped to ~0–30 for a few seconds, the next readings often sp
 
 ## 6. Electron gotchas
 
-- Some tools (including VS Code's integrated agents) set `ELECTRON_RUN_AS_NODE=1`, which makes Electron start as plain Node (`app` is undefined). `scripts/start.js` removes it before launching.
+- Some developer tools set `ELECTRON_RUN_AS_NODE=1`, which makes Electron start as plain Node (`app` is undefined). `scripts/start.js` removes it before launching.
 - If `npm install` skipped Electron's binary download, run `node node_modules/electron/install.js`.
 - The SDK's renderer module uses `require`, so a sandboxed renderer needs a bundler (we use esbuild) and must import from `@smartspectra/node-sdk/renderer` or `/messages`, never the root (which pulls in the native FFI layer).
 - The SDK loads native DLLs through FFI from real paths: package with `asar: false` (or a tested `asarUnpack`).
