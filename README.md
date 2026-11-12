@@ -27,7 +27,7 @@
   <strong>DEV post</strong> <em>(link added on release)</em>
 </p>
 
-> **TL;DR** · Stuck between two options? CrossRoads guides you through short scenes for each option, **twice, in a mirrored order (A B B A)**, while the [Presage SmartSpectra SDK](https://smartspectra.presagetech.com/) reads your pulse from your camera. It then shows a **mirror, not a verdict**: your pulse through the session, the moments your body reacted, and questions to reflect on. It names a "calmer" option **only when both rounds agree beyond normal pulse wobble**. We validated that rule with a tea-vs-coffee control (it correctly said nothing) and a beach-vs-speech positive control (it correctly found the calm option). Everything runs on your computer; video is never saved.
+> **TL;DR** · Stuck between two options? CrossRoads guides you through short scenes for each option, **twice, in a mirrored order (A B B A)**, while the [Presage SmartSpectra SDK](https://smartspectra.presagetech.com/) reads your pulse from your camera. It then shows a **mirror, not a verdict**: your pulse through the session, the moments your body reacted, and questions to reflect on. It names a "calmer" option **only when both rounds agree beyond normal pulse wobble**. We tested that rule against ourselves: a tea-vs-coffee control (it correctly said nothing) and a beach-vs-speech positive control (it found the calm option once, and on an identical repeat it honestly said it could not tell). Everything runs on your computer; video is never saved.
 
 <p align="center">
   <img src="docs/images/05-results-verdict.png" width="900" alt="CrossRoads results screen for the bundled sample session">
@@ -103,9 +103,10 @@ The first version compared each option once with a calm baseline. Our **tea-vs-c
 |---|---|
 | Control: drink tea vs drink coffee | **Didn't pick a side** ✓ (a looser rule would have said "calmer with tea") |
 | Real decision: stay in my city vs move to Bangalore | **Didn't pick a side** (the two rounds disagreed) |
-| Positive control: a quiet afternoon at the beach vs giving a speech to 1,000 people with no preparation | **Calmer with the beach** ✓ (−10.0 and −8.1 bpm) |
+| Positive control, run 1: a quiet afternoon at the beach vs giving a speech to 1,000 people with no preparation | **Calmer with the beach** ✓ (−10.0 and −8.1 bpm) |
+| Positive control, run 2: the same two options again, ~8 hours later, better signal | **Didn't pick a side** (the rounds disagreed: speech +2.1, then −7.5 bpm) |
 
-Three sessions from one person are encouraging, not proof. Full numbers, the calibration and the limits: [docs/VALIDATION.md](docs/VALIDATION.md). Check the sample yourself with `npm run analyze`.
+The app never invented a winner when the evidence was weak or contradictory, and it found a real reaction once but not on the repeat, so a clear reaction is not guaranteed in a four-minute session. Four sessions from one person are not a study. Full numbers, the calibration and the limits: [docs/VALIDATION.md](docs/VALIDATION.md). Check the sample yourself with `npm run analyze`.
 
 <details>
 <summary><strong>How the verdict is decided</strong></summary>
@@ -185,7 +186,7 @@ npm start
 
 ## Limitations
 
-- **One person, three validation sessions.** Encouraging, not a study.
+- **One person, four validation sessions.** Not a study. The positive control was found once and not on the repeat.
 - **Pulse wobbles 6–9 bpm minute to minute**, so most real decisions will honestly show "didn't pick a side". That is the point of a mirror.
 - **The SDK's pulse is a ~12 s rolling average**; moments are reflection cues, not second-by-second measurements.
 - **A higher pulse isn't "worse"**: excitement and fear both raise it. The app asks; it never decides.
@@ -199,7 +200,7 @@ npm start
 |---|---|
 | **Use of the underlying technology** | Native SDK capture in the main process, 7 metrics requested, validation status turned into guidance, filters for the SDK's real behaviour (warm-up, spikes, confidence), a live preview from `videoOutput`: [SDK-NOTES](docs/SDK-NOTES.md), [ARCHITECTURE](docs/ARCHITECTURE.md) |
 | **Usability and UX** | Four-minute guided sessions, a journal-style design, plain-language guidance, a sample that needs no camera, an installer, the Journal and "What did you decide?" |
-| **Originality and creativity** | The only entry comparing two life options; A B B A visits; an honest "didn't pick a side"; validated with null and positive controls: [VALIDATION](docs/VALIDATION.md) |
+| **Originality and creativity** | The only entry comparing two life options; A B B A visits; an honest "didn't pick a side"; tested against null and positive controls, including a repeat that did not replicate: [VALIDATION](docs/VALIDATION.md) |
 | **Best Thoughtful Real-World Use** (prize category) | Consent first, local-only data, deletion, no medical claims, reflection instead of a verdict: [PRIVACY](docs/PRIVACY.md) |
 
 ## Project layout

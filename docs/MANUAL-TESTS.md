@@ -11,8 +11,8 @@ Checks that need a real camera, a real API key or the installed app, with the da
 | 3 | Settings → paste key → **Save key** | Status "Saved (encrypted on this computer)" | ✅ Nov 12 (installed) |
 | 4 | Signal Lab → phone camera → 30 s live test | Pulse, breathing, blinks, expression appear; stops by itself; recording saved | ✅ Nov 12 (installed) |
 | 5 | Settings → **Open data folder** | `%APPDATA%\crossroads` opens, recording present | ✅ Nov 12 (installed; the folder was `gut-check` before the rename) |
-| 6 | Full check: two options → consent → camera check → session | Settle → baseline → 4 visits → results; session in the Journal | ✅ Nov 12 (dev build, 3 sessions) · ⏳ installed final build |
-| 7 | Results → **What did you decide?** → Save | Choice shown on the result and in the Journal | ⏳ installed final build |
+| 6 | Full check: two options → consent → camera check → session | Settle → baseline → 4 visits → results; session in the Journal | ✅ Nov 12 (dev build, 3 sessions; installed CrossRoads 1.0.0, 1 session) |
+| 7 | Results → **What did you decide?** → Save | Choice shown on the result and in the Journal | ✅ Nov 12 (installed; choice saved in the session file) |
 | 8 | Journal → **Delete** one session | Session and its recording removed | ⏳ installed final build |
 | 9 | Bad lighting / face out of frame during settle | Guidance hint shown; after 90 s the session stops and says which check failed | ✅ Nov 11 (replay of a failing recording) |
 | 10 | Installer contents | No API key, no sessions or recordings inside; SDK loads | ✅ Nov 12 (scripted scan) |

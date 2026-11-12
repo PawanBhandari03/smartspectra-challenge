@@ -174,9 +174,9 @@ File names coming from the window are reduced to `path.basename` and checked for
 | Session plan (A B B A, timings, prompts) | ✅ Verified (automated) | `tests/session.test.js` |
 | SDK packet decoding, blink de-duplication | ✅ Verified (automated) | `tests/vitals.test.js` |
 | Null control says "didn't pick a side" | ✅ Verified (manual, Nov 12) | [VALIDATION.md](VALIDATION.md) |
-| Positive control detects the calm option | ✅ Verified (manual, Nov 12) | [VALIDATION.md](VALIDATION.md) |
+| Positive control detects the calm option | ⚠️ Found once, not on the repeat (manual, Nov 12) | [VALIDATION.md](VALIDATION.md) |
 | Installer: no key or personal data inside; SDK loads; live test; recording saved | ✅ Verified (manual, Nov 12) | [MANUAL-TESTS.md](MANUAL-TESTS.md) |
-| Full 4-minute session in the installed app (final build) | ⏳ Planned | [MANUAL-TESTS.md](MANUAL-TESTS.md) |
+| Full 4-minute session in the installed app (CrossRoads 1.0.0) | ✅ Verified (manual, Nov 12, 5:45 PM) | [MANUAL-TESTS.md](MANUAL-TESTS.md) |
 | Network traffic of the SDK (beyond key and credit checks) | ❌ Not verified | stated by Presage; not measured by us |
 | macOS / Linux | ❌ Not built or tested | the SDK supports them; the installer is Windows-only |
 | Accuracy of the SDK's pulse against a medical device | ❌ Not tested | out of scope; CrossRoads only compares a person with themselves |

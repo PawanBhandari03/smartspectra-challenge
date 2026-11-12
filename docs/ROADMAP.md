@@ -76,7 +76,7 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] 💳 👤 3 full live ABBA sessions end-to-end: control (tea/coffee), real decision (city/Bangalore), positive control (beach/speech)
 - [x] Fix what broke: phone camera instead of laptop (fps), night lighting ("sad" bias), SDK spikes after low confidence, single-visit drift → ABBA
 - [x] Windows installer (`.exe`) for judges, tested installed
-- [ ] 💳 👤 One full Gut Check in the **installed** app with the latest code (session flow was refactored after the last full live run). Can double as demo-video take 1.
+- [x] 💳 👤 One full check in the **installed** CrossRoads 1.0.0 app (Nov 12, 5:45 PM): flow, saving and "What did you decide?" all worked. Result: didn't pick a side (the positive control did not repeat; see docs/VALIDATION.md)
 - Known limit: the phone camera via Phone Link shows blinks ~5 s late on screen (Wi-Fi video buffering; the SDK itself reports blinks within ~30 ms). Doesn't affect results.
 
 ## Phase 6 — Submission (Nov 21–22)
@@ -113,6 +113,7 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 | — | start | 0 | 100 |
 | Nov 11 | First live test (18 s) + second live test (90 s) | 3 | **97** (dashboard) |
 | Nov 11–12 | Lab tests, 2 night sessions, 3 ABBA sessions, installed-app test | 52 | **45** (dashboard, Nov 12 4:19 PM) |
+| Nov 12 | Full 4-minute check in the installed app | ~8 | **~37** (estimate; confirm on the dashboard) |
 
 **Budget for the rest:** one full installed-app session (~8, can be video take 1) + one more video take (~8) + ~10 buffer. No other live tests.
 

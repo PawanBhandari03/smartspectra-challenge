@@ -262,3 +262,9 @@ The session was also shortened to ~4 minutes after real-use feedback (6 minutes 
 Confidence values from the SDK are on a 0–100 scale. The Baevsky stress index comes out small (~0.6), not in the textbook 50–150 range.
 
 **Camera:** the laptop webcam gave only ~20 fps in indoor light. A phone used as a webcam (Windows Phone Link) gives a steady 30 fps and is the recommended setup for testing and the demo. The app works with any camera.
+
+## The positive control did not repeat (Nov 12, 5:45 PM)
+
+The installed CrossRoads 1.0.0 ran the same beach-vs-speech check as the morning's sample, with better signal (98% stable readings, confidence 83/100, ~30 readings per visit). Result: **didn't pick a side**. Per-visit medians: beach 69.9 / 77.9, speech 72.0 / 70.4; round 1 speech +2.1 bpm, round 2 speech −7.5 bpm. The morning run (speech +10.0 / +8.1) was not reproduced.
+
+Reading: the app did not invent a winner, which is the property that matters, but a clear reaction is not guaranteed in four minutes. Docs, README claims and the validation chart were updated to say "found once, not on the repeat". Hypotheses (untested): novelty, shared second-visit prompt templates ("one hard day…") raising tension even in a calm scene, ordinary 6–9 bpm wobble.
