@@ -3,11 +3,11 @@
 // prompt that was on screen at that time.
 
 const SVG = 'http://www.w3.org/2000/svg';
-const OPTION_COLORS = ['#2a78d6', '#eb6834'];
-const INK = '#15171a';
-const MUTED = '#6e737c';
-const GRID = '#ececE8';
-const SURFACE = '#ffffff';
+const OPTION_COLORS = ['#2f62a8', '#c8612e'];
+const INK = '#1f1d1a';
+const MUTED = '#847b6f';
+const GRID = '#ebe3d6';
+const SURFACE = '#fbf8f2';
 const GAP_MS = 4000;
 
 function el(name, attrs = {}, parent = null) {

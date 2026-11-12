@@ -1,13 +1,13 @@
 :root {
-  --bg: #f6f6f4;
-  --card: #ffffff;
-  --line: #e3e3de;
-  --text: #15171a;
-  --muted: #6e737c;
-  --accent: #111418;
-  --ok: #0f6b52;
-  --warn: #9a6200;
-  --err: #b42318;
+  --bg: #f4efe6;
+  --card: #fbf8f2;
+  --line: #e2d9ca;
+  --text: #1f1d1a;
+  --muted: #847b6f;
+  --accent: #1f1d1a;
+  --ok: #2f5d46;
+  --warn: #8a5a00;
+  --err: #a3271c;
 }
 
 * { box-sizing: border-box; }
@@ -65,9 +65,9 @@ main {
 .icon-btn.done { color: var(--ok); border-color: var(--ok); }
 
 button, select {
-  background: #ffffff;
+  background: var(--card);
   color: var(--text);
-  border: 1px solid #cfcfc8;
+  border: 1px solid #cdbfaa;
   border-radius: 8px;
   padding: 7px 12px;
   font: inherit;

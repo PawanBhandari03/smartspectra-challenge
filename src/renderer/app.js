@@ -579,6 +579,10 @@ function renderResults(result, sessionName, recordingName) {
     + a.visits.map((v) => `${v.label}#${v.visit} pulse ${fmt(v.stats.pulse, 1)} (n${v.stats.pulseReadings})`).join(' · ')
     + ` · saved ${sessionName}`);
 
+  const when = new Date(result.createdAt || Date.now())
+    .toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  $('resultsDate').textContent = `${when} · “${result.options[0].label}” or “${result.options[1].label}”?`;
+
   const text = verdictText(a.verdict);
   $('resultsTitle').textContent = text.title;
   $('resultsNote').textContent = text.note;
@@ -774,7 +778,7 @@ async function renderHistory() {
     first.textContent = session.options[0].label;
     const vs = document.createElement('span');
     vs.className = 'vs';
-    vs.textContent = 'vs';
+    vs.textContent = 'or';
     const second = document.createElement('span');
     second.textContent = session.options[1].label;
     title.append(swatch(OPTION_COLORS[0]), first, vs, swatch(OPTION_COLORS[1]), second);
@@ -815,6 +819,7 @@ async function renderHistory() {
 // ---------- Start ----------
 
 (async () => {
+  $('todayDate').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
   state.info = await bridge.info();
   const auto = await window.gutCheck.getAutoReplay();
   // Dev/testing hooks: "screen:<name>" opens a screen; a recording name runs a full demo session.
