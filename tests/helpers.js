@@ -3,12 +3,14 @@
 const TIMING = { promptEveryMs: 10000 };
 
 // visitPulses: pulse level for each of the 4 visits, in time order. order: optionIndex per visit.
-function abbaSession(visitPulses, { order = [0, 1, 1, 0], readingsPerVisit = 25, confidence = 80, jitter = 1 } = {}) {
+// visitBreaths (optional): breathing rate for each visit, read in the visit's last 10 s.
+function abbaSession(visitPulses, { order = [0, 1, 1, 0], readingsPerVisit = 25, confidence = 80, jitter = 1, visitBreaths = null } = {}) {
   const phases = [
     { kind: 'settle', optionIndex: null, visit: null, startMs: 0, endMs: 15000 },
     { kind: 'baseline', optionIndex: null, visit: null, startMs: 15000, endMs: 45000, prompts: ['calm'] },
   ];
   const pulse = [];
+  const breathing = [];
   const visitCount = [0, 0];
   let t = 45000;
   order.forEach((optionIndex, n) => {
@@ -27,6 +29,9 @@ function abbaSession(visitPulses, { order = [0, 1, 1, 0], readingsPerVisit = 25,
       const offset = 15000 + Math.round((i * 24000) / readingsPerVisit);
       pulse.push({ t: start + offset, v: visitPulses[n] + (i % 2 ? jitter : -jitter), c: confidence, s: true });
     }
+    if (visitBreaths) {
+      for (let i = 0; i < 5; i++) breathing.push({ t: start + 31000 + i * 1500, v: visitBreaths[n], c: confidence, s: true });
+    }
     t = end;
   });
   return {
@@ -36,7 +41,7 @@ function abbaSession(visitPulses, { order = [0, 1, 1, 0], readingsPerVisit = 25,
     order,
     timing: TIMING,
     phases,
-    series: { pulse, breathing: [], hrv: [], expression: [], blinks: [], fps: [], validation: [] },
+    series: { pulse, breathing, hrv: [], expression: [], blinks: [], fps: [], validation: [] },
   };
 }
 

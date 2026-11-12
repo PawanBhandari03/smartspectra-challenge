@@ -44,7 +44,7 @@ The SDK runs **in the main process** because the SDK's other Electron mode (rend
 | [`src/renderer/timeline.js`](../src/renderer/timeline.js) | The pulse-over-time SVG chart with hover tooltips |
 | [`src/renderer/lab.*`](../src/renderer/lab.js) | Signal Lab: developer page for raw signals, short tests and raw replays |
 | [`scripts/`](../scripts) | `build.js` (esbuild bundles), `start.js` (launch), `analyze-session.js` (prints any session's analysis), `make-icon.js` |
-| [`tests/`](../tests) | 21 automated tests (`node --test`), run on every push by GitHub Actions |
+| [`tests/`](../tests) | 24 automated tests (`node --test`), run on every push by GitHub Actions |
 
 ## Session state machine
 

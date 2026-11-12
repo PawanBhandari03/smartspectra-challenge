@@ -629,9 +629,12 @@ function verdictText(v) {
     case 'tooClose':
       return {
         title: 'Your body didn\'t pick a side',
-        note: v.agree
-          ? `Both rounds pointed the same way, but not by more than ${fmt(v.threshold, 1)} bpm each, which is within the normal minute-to-minute wobble of a resting pulse.`
-          : 'The two rounds pointed in opposite directions, so neither option clearly calmed or stirred you more. The moments below show where your body did react.',
+        note: 'That is an answer too: neither option made your body clearly calmer or tenser than the other, so this choice '
+          + 'is less about fear or comfort and more about what you value. '
+          + (v.agree
+            ? `Both rounds leaned the same way, but by less than ${fmt(v.threshold, 1)} bpm, which is within the normal wobble of a resting pulse.`
+            : 'The two rounds pointed in opposite directions.')
+          + ' The moments below show where your body did react.',
       };
     case 'notEnough':
       return { title: 'Not enough clear signal', note: 'At least one visit had too few reliable pulse readings. Better light on your face and staying still usually fix this.' };
@@ -691,6 +694,7 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
   $('resultsDate').textContent = `${when} · “${result.options[0].label}” or “${result.options[1].label}”?`;
 
   const text = verdictText(a.verdict);
+  renderReveal(a, result.options);
   $('resultsTitle').textContent = text.title;
   $('resultsNote').textContent = text.note;
 
@@ -705,12 +709,13 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
     + 'Each option is visited twice in a mirrored order (A B B A), so the slow drift of a body during a session affects both options equally. '
     + `Only stable readings with confidence ${MIN_CONFIDENCE}+ count, skipping the first 15 s of each visit while the pulse average catches up. `
     + `A resting pulse wobbles 6 to 9 bpm from minute to minute by itself, so CrossRoads only names a calmer option when both rounds agree by more than ${MIN_ROUND_GAP_BPM} bpm. `
+    + 'Breathing and blinks are shown, not counted: breathing is only readable in the last ~10 s of each visit, and in our tea-vs-coffee test it differed by chance. '
     + 'A wellness reflection tool, not medical advice.';
 
   const table = document.createElement('table');
   table.className = 'results';
   const head = table.createTHead().insertRow();
-  for (const h of ['Visit', 'Option', 'Pulse', 'Blinks', 'Signal']) {
+  for (const h of ['Visit', 'Option', 'Pulse', 'Breathing', 'Blinks', 'Signal']) {
     const th = document.createElement('th');
     th.textContent = h;
     head.appendChild(th);
@@ -721,6 +726,7 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
     cell(row, 'Baseline');
     cell(row, 'Calm scene', 'muted');
     cell(row, `${fmt(a.baseline.pulse)} bpm`, 'num');
+    cell(row, `${fmt(a.baseline.breathing, 1)} /min`, 'num');
     cell(row, `${fmt(a.baseline.blinksPerMin)} /min`, 'num');
     cell(row, a.baseline.enoughSignal ? 'good' : 'weak', a.baseline.enoughSignal ? '' : 'up');
   }
@@ -729,6 +735,7 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
     cell(row, `${i + 1}`);
     cell(row, v.label);
     cell(row, `${fmt(v.stats.pulse)} bpm`, 'num');
+    cell(row, `${fmt(v.stats.breathing, 1)} /min`, 'num');
     cell(row, `${fmt(v.stats.blinksPerMin)} /min`, 'num');
     cell(row, v.stats.enoughSignal ? 'good' : 'weak', v.stats.enoughSignal ? '' : 'up');
   });
@@ -758,6 +765,38 @@ function renderLegend(options) {
   });
 }
 
+// The crossroads from the welcome screen, drawn again as the result: the path your body was calmer
+// with draws thicker; if it didn't pick a side, both paths draw the same.
+function renderReveal(a, options) {
+  const svg = $('reveal');
+  const v = a.verdict;
+  const weight = (i) => {
+    if (v.kind === 'lean') return v.calmerIndex === i ? 'strong' : 'faint';
+    return v.kind === 'tooClose' ? 'even' : 'unsure';
+  };
+  const short = (t) => (t.length > 34 ? `${t.slice(0, 33)}…` : t);
+  const el = (tag, attrs) => {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, val] of Object.entries(attrs)) e.setAttribute(k, val);
+    return e;
+  };
+  svg.replaceChildren();
+  svg.appendChild(el('path', { d: 'M2 40h96l8-14 9 28 8-22 6 8h31', class: 'stem', pathLength: 1 }));
+  [14, 66].forEach((y, i) => {
+    const g = el('g', { class: `branch ${weight(i)}` });
+    g.style.setProperty('--c', OPTION_COLORS[i]); // CSSOM, not a style attribute: the CSP blocks inline styles
+    g.appendChild(el('path', { d: `M160 40c34 0 42 ${y - 40} 90 ${y - 40}h70`, pathLength: 1 }));
+    g.appendChild(el('circle', { cx: 326, cy: y, r: 4.5 }));
+    const label = el('text', { x: 340, y: y + 5 });
+    label.textContent = short(options[i].label);
+    g.appendChild(label);
+    svg.appendChild(g);
+  });
+  svg.appendChild(el('circle', { cx: 160, cy: 40, r: 3.5, class: 'fork' }));
+  const summary = { strong: 'calmer', faint: 'less calm', even: 'no clear difference', unsure: 'not enough signal' };
+  svg.setAttribute('aria-label', options.map((o, i) => `${o.label}: ${summary[weight(i)]}`).join('; '));
+}
+
 function renderOptionSummary(a) {
   const box = $('optionSummary');
   box.innerHTML = '';
@@ -784,8 +823,11 @@ function renderOptionSummary(a) {
     value.appendChild(unit);
     const sub = document.createElement('div');
     sub.className = 'sub';
-    sub.textContent = `Visit 1: ${fmt(o.visitPulses[0])} · Visit 2: ${fmt(o.visitPulses[1])} bpm · ${fmt(o.blinksPerMin)} blinks/min`;
-    card.append(name, value, sub);
+    sub.textContent = `Pulse by visit: ${fmt(o.visitPulses[0])} · ${fmt(o.visitPulses[1])} bpm`;
+    const sub2 = document.createElement('div');
+    sub2.className = 'sub';
+    sub2.textContent = `Breathing: ${fmt(o.visitBreathing[0], 1)} · ${fmt(o.visitBreathing[1], 1)} /min · Blinks: ${fmt(o.blinksPerMin)} /min`;
+    card.append(name, value, sub, sub2);
     box.appendChild(card);
   });
 }

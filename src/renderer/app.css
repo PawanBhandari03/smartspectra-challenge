@@ -328,8 +328,31 @@ table.results td.num { font-variant-numeric: tabular-nums; }
 .history-item .delete:hover { color: var(--err); border-color: #e3b7b1; }
 .history-item .chose { color: var(--accent); font-size: 13px; margin-top: 2px; }
 
+/* Result reveal: the welcome screen's crossroads, drawn again as the answer. */
+.reveal { display: block; width: 100%; max-width: 640px; height: auto; margin: 22px 0 0; overflow: visible; }
+.reveal path { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.reveal .stem { stroke: var(--accent); stroke-width: 2.2; animation: draw 0.9s ease-out forwards; }
+.reveal .fork { fill: var(--ink); opacity: 0; animation: appear 0.3s 0.8s forwards; }
+.reveal .branch path { stroke: var(--c); stroke-width: 2.6; animation: draw 1s 0.9s ease-in-out forwards; }
+.reveal .branch circle { fill: var(--c); opacity: 0; animation: appear 0.3s 1.8s forwards; }
+.reveal .branch text { font-family: var(--serif); font-size: 17px; fill: var(--ink); opacity: 0; animation: appear 0.5s 1.9s forwards; }
+.reveal .branch.strong path { animation: draw 1s 0.9s ease-in-out forwards, thicken 0.6s 2s ease-out forwards; }
+.reveal .branch.strong text { font-weight: 600; }
+.reveal .branch.faint path { animation: draw 1s 0.9s ease-in-out forwards, fade 0.6s 2s ease-out forwards; }
+.reveal .branch.faint circle, .reveal .branch.faint text { animation: appear-faint 0.5s 1.9s forwards; }
+.reveal .branch.unsure path, .reveal .branch.unsure circle, .reveal .branch.unsure text { animation: draw 1s 0.9s forwards, appear-faint 0.5s 1.9s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes appear { to { opacity: 1; } }
+@keyframes appear-faint { to { opacity: 0.5; } }
+@keyframes thicken { to { stroke-width: 6.5; } }
+@keyframes fade { to { stroke-width: 1.6; opacity: 0.45; } }
+
 @media (prefers-reduced-motion: reduce) {
   .heart.beating { animation: none; }
+  .reveal path { stroke-dashoffset: 0; }
+  .reveal *, .reveal .branch path { animation: none !important; opacity: 1; }
+  .reveal .branch.strong path { stroke-width: 6.5; }
+  .reveal .branch.faint path, .reveal .branch.unsure * { opacity: 0.5; }
   .prompt { transition: none; }
 }
 .history-item .title { font-family: var(--serif); font-size: 21px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

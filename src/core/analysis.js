@@ -17,6 +17,9 @@ const MIN_PULSE_READINGS = 8;
 // On fake A/B sessions cut from real recordings (labels meaningless), pulse medians of one-minute
 // blocks differed by 6-9 bpm by chance. Each round must beat both this floor and the visit wobble.
 const MIN_ROUND_GAP_BPM = 6;
+// Breathing is shown next to the pulse result as context, never as a vote: it lags ~30 s, so only
+// the last ~10 s of each visit count, and in the tea-vs-coffee control it differed by chance.
+const BREATHING = { minReadings: 3 };
 
 function median(values) {
   if (!values.length) return null;
@@ -61,13 +64,16 @@ function reliable(points, start, end) {
 
 function blockStats(series, block) {
   const pulse = reliable(series.pulse, block.startMs + LAGS.pulseSkipMs, block.endMs);
-  const breathing = reliable(series.breathing, block.startMs + LAGS.breathingSkipMs, block.endMs);
+  // The spike filter above is tuned for pulse; breathing only needs stable, confident readings.
+  const breathing = series.breathing
+    .filter((p) => p.s && p.c >= MIN_CONFIDENCE && p.t >= block.startMs + LAGS.breathingSkipMs && p.t < block.endMs)
+    .map((p) => p.v);
   const minutes = (block.endMs - block.startMs) / 60000;
   return {
     pulse: median(pulse),
     pulseReadings: pulse.length,
     enoughSignal: pulse.length >= MIN_PULSE_READINGS,
-    breathing: median(breathing),
+    breathing: breathing.length >= BREATHING.minReadings ? median(breathing) : null,
     blinksPerMin: minutes > 0 ? series.blinks.filter((t) => t >= block.startMs && t < block.endMs).length / minutes : null,
   };
 }
@@ -142,7 +148,8 @@ function analyzeSession(session) {
       label: o.label,
       visitPulses: own.map((v) => v.stats.pulse),
       pulse: pulses.length ? pulses.reduce((a, b) => a + b, 0) / pulses.length : null,
-      blinksPerMin: blinks.length ? blinks.reduce((a, b) => a + b, 0) / blinks.length : null,
+      visitBreathing: own.map((v) => v.stats.breathing),
+    blinksPerMin: blinks.length ? blinks.reduce((a, b) => a + b, 0) / blinks.length : null,
     };
   });
 
@@ -165,4 +172,4 @@ function pulseTrace(session) {
   return clean(session.series.pulse).map((p) => ({ t: p.t, v: p.v }));
 }
 
-module.exports = { analyzeSession, pulseTrace, LAGS, MIN_CONFIDENCE, MIN_PULSE_READINGS, MIN_ROUND_GAP_BPM, MOMENT };
+module.exports = { analyzeSession, pulseTrace, LAGS, MIN_CONFIDENCE, MIN_PULSE_READINGS, MIN_ROUND_GAP_BPM, MOMENT, BREATHING };

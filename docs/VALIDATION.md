@@ -129,6 +129,7 @@ The reaction did not repeat: speech was only 2 bpm higher in round 1, and the se
 | Occasional physically impossible jumps | plausibility gate: max(8 bpm, 3.5 bpm/s); re-checked that no real verdict changed |
 | At night a neutral face read "sad" 80–95%; in daylight 86–92% "neutral" | expressions are timeline-only; the app asks for front light |
 | HRV appeared only after ~60 s with confidence ~10 | HRV removed from the results |
+| Breathing is only readable in the last ~10 s of a visit (30 s lag). With a "1 breath/min in both rounds" rule it picked a side in the tea-vs-coffee control (tea), and in the beach sample it pointed the opposite way to pulse | breathing is shown per visit as numbers, never voted, and never summarised as "agreed" or "disagreed" |
 | 6-minute sessions were uncomfortable and overheated the phone camera | 4-minute sessions (30 s baseline, 40 s visits, 10 s resets) |
 
 ## 6. Limits

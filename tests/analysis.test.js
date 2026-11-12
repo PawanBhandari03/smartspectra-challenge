@@ -81,3 +81,19 @@ test('moments: a pulse rise right after a prompt is reported', () => {
   assert.equal(moments.rises[0].prompt, 'p2');
   assert.ok(moments.rises[0].shift >= 8);
 });
+
+test('breathing: each visit gets a median from its last 10 s, shown per option', () => {
+  const a = analyzeSession(abbaSession([65, 76, 77, 66], { visitBreaths: [12, 15, 16, 13] }));
+  assert.deepEqual(a.options[0].visitBreathing, [12, 13]);
+  assert.deepEqual(a.options[1].visitBreathing, [15, 16]);
+});
+
+test('breathing: missing readings never change the pulse verdict', () => {
+  const a = analyzeSession(abbaSession([65, 76, 77, 66]));
+  assert.deepEqual(a.options[0].visitBreathing, [null, null]);
+  assert.equal(a.verdict.kind, 'lean');
+});
+
+test('bundled sample: every visit has a breathing reading', () => {
+  for (const v of analyzeSession(sample).visits) assert.ok(v.stats.breathing > 5 && v.stats.breathing < 40);
+});

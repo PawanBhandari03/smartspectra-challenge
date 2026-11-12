@@ -164,13 +164,13 @@ npm start
 | Command | What it does |
 |---|---|
 | `npm start` | Bundle the UI (esbuild) and launch the app |
-| `npm test` | 21 automated tests (verdict rules, filters, session plan, SDK decoding) |
+| `npm test` | 24 automated tests (verdict rules, filters, session plan, SDK decoding) |
 | `npm run analyze` | Print the full analysis of the bundled sample (or `npm run analyze -- path/to/session.json`) |
 | `npm run dist` | Build the Windows installer and portable exe into `release/` |
 
 ## Tests
 
-`npm test` runs 21 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, and the session plan must always be A B B A or B A A B. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
+`npm test` runs 24 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, and the session plan must always be A B B A or B A A B. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
 
 ## Troubleshooting
 
