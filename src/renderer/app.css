@@ -65,9 +65,12 @@ body {
   border-bottom: 1px solid var(--rule-strong);
 }
 
-.brand { display: flex; align-items: baseline; gap: 10px; background: none; border: none; padding: 0; cursor: pointer; color: var(--ink); }
-.wordmark { font-family: var(--serif); font-size: 23px; font-weight: 600; letter-spacing: -0.01em; }
-.tagline { font-family: var(--serif); font-style: italic; color: var(--muted); font-size: 15px; }
+.brand { display: flex; align-items: center; gap: 11px; background: none; border: none; padding: 0; cursor: pointer; color: var(--ink); text-align: left; }
+.brand:hover:not(:disabled) { border: none; }
+.logo { width: 36px; height: 36px; display: block; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.wordmark { font-family: var(--serif); font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+.tagline { font-family: var(--serif); font-style: italic; color: var(--muted); font-size: 13px; margin-top: 1px; }
 .app-bar nav { display: flex; align-items: center; gap: 4px; }
 .nav { background: none; border: none; color: var(--ink-2); padding: 6px 10px; font: inherit; font-size: 13.5px; text-decoration: none; cursor: pointer; border-radius: 4px; }
 .nav:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; background: none; }

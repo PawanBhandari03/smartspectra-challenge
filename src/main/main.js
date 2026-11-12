@@ -183,6 +183,8 @@ function createWindow() {
     width: 1280,
     height: 860,
     backgroundColor: '#f4efe6',
+    icon: path.join(appRoot, 'assets/icon.png'),
+    title: 'Gut Check',
     webPreferences: {
       preload: path.join(appRoot, 'dist/preload.js'),
       contextIsolation: true,
@@ -215,6 +217,9 @@ function createWindow() {
     }, 2000);
   }
 }
+
+// Groups the window under its own taskbar entry and icon on Windows (instead of Electron's).
+if (process.platform === 'win32') app.setAppUserModelId('com.pawanbhandari.gutcheck');
 
 app.whenReady().then(createWindow);
 

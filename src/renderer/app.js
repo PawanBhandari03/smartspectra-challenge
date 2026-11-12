@@ -819,7 +819,10 @@ async function renderHistory() {
 // ---------- Start ----------
 
 (async () => {
-  $('todayDate').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+  // Refreshed every minute so the masthead stays right if the app is left open past midnight.
+  const showToday = () => { $('todayDate').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }); };
+  showToday();
+  setInterval(showToday, 60000);
   state.info = await bridge.info();
   const auto = await window.gutCheck.getAutoReplay();
   // Dev/testing hooks: "screen:<name>" opens a screen; a recording name runs a full demo session.
