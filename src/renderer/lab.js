@@ -508,7 +508,7 @@ ui.refreshRecordings.onclick = () => refreshRecordings();
   log(`Ready. SDK ${info.version}. API key ${info.hasKey ? 'loaded' : 'MISSING'}.`);
   await refreshCameras();
   const auto = await window.gutCheck.getAutoReplay();
-  if (auto) {
+  if (auto && !auto.startsWith('screen:')) {
     ui.recordings.value = auto;
     ui.speed.value = '10';
     await startReplay();

@@ -826,7 +826,9 @@ async function renderHistory() {
   state.info = await bridge.info();
   const auto = await window.gutCheck.getAutoReplay();
   // Dev/testing hooks: "screen:<name>" opens a screen; a recording name runs a full demo session.
-  if (auto.startsWith('screen:')) {
+  if (auto === 'screen:lab') {
+    location.href = 'lab.html';
+  } else if (auto.startsWith('screen:')) {
     await go(auto.slice(7));
   } else if (auto) {
     state.options = [{ label: 'Stay in my city', detail: '' }, { label: 'Move for the new job', detail: 'higher salary' }];
