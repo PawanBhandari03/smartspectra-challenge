@@ -27,7 +27,8 @@ Checks that need a real camera, a real API key or the installed app, with the da
 | Nov 12 | phone, daylight | tea vs coffee (A B B A) | didn't pick a side ✓ |
 | Nov 12 | phone, daylight | city vs Bangalore (A B B A) | didn't pick a side |
 | Nov 12 | phone, daylight | beach vs speech (A B B A) | calmer with the beach ✓ (bundled as the sample) |
-| Nov 12 | installed app | 30 s Signal Lab | recording saved to `%APPDATA%` ✓ |
+| Nov 12 | installed app | 30 s Signal Lab | recording saved to the app data folder ✓ |
+| Nov 12 (5:45 PM) | installed CrossRoads 1.0.0 | beach vs speech again (A B B A) | excellent signal (98% stable, confidence 83); didn't pick a side (rounds disagreed: +2.1, −7.5 bpm); session, recording and choice saved ✓ |
 
 ## How to run the installer scan
 
