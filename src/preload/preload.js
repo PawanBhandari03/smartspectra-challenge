@@ -25,6 +25,17 @@ contextBridge.exposeInMainWorld('gutCheck', {
   saveSession: (json) => ipcRenderer.invoke('session:save', json),
   listSessions: () => ipcRenderer.invoke('session:list'),
   readSample: () => ipcRenderer.invoke('sample:read'),
+  setChoice: (name, choice) => ipcRenderer.invoke('session:setChoice', name, choice),
+  deleteSession: (name) => ipcRenderer.invoke('session:delete', name),
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get'),
+    saveKey: (key) => ipcRenderer.invoke('settings:saveKey', key),
+    removeKey: () => ipcRenderer.invoke('settings:removeKey'),
+  },
+  data: {
+    openFolder: () => ipcRenderer.invoke('data:openFolder'),
+    deleteAll: () => ipcRenderer.invoke('data:deleteAll'),
+  },
   readSession: (name) => ipcRenderer.invoke('session:read', name),
   listRecordings: () => ipcRenderer.invoke('gutcheck:listRecordings'),
   readRecording: (name) => ipcRenderer.invoke('gutcheck:readRecording', name),

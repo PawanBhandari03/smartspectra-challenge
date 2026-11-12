@@ -53,8 +53,51 @@ function go(name) {
   closeCamera();
   if (name === 'options') renderOptions();
   if (name === 'history') return renderHistory();
+  if (name === 'settings') return renderSettings();
   return Promise.resolve();
 }
+
+// ---------- Settings ----------
+
+const KEY_STATUS = {
+  env: 'Using the key from the developer .env file',
+  saved: 'Saved (encrypted on this computer)',
+  none: 'Not set: live measurement is off. The sample still works.',
+};
+
+async function renderSettings() {
+  const s = await window.gutCheck.settings.get();
+  $('keyStatus').textContent = KEY_STATUS[s.keySource];
+  $('removeKey').disabled = s.keySource !== 'saved';
+  $('dataDir').textContent = s.dataDir;
+  $('keyMessage').textContent = s.encryptionAvailable ? '' : 'Secure storage is not available on this computer, so a key cannot be saved.';
+  $('dataMessage').textContent = '';
+}
+
+$('saveKey').onclick = async () => {
+  try {
+    await window.gutCheck.settings.saveKey($('keyInput').value);
+    $('keyInput').value = '';
+    await renderSettings();
+    $('keyMessage').textContent = 'Key saved. The next live session will use it.';
+  } catch (err) {
+    $('keyMessage').textContent = `Couldn't save the key: ${err.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')}`;
+  }
+};
+
+$('removeKey').onclick = async () => {
+  await window.gutCheck.settings.removeKey();
+  await renderSettings();
+  $('keyMessage').textContent = 'Key removed from this computer.';
+};
+
+$('openDataFolder').onclick = () => window.gutCheck.data.openFolder();
+
+$('deleteAllData').onclick = async () => {
+  if (!confirm('Delete all your Gut Check sessions and recordings from this computer? This cannot be undone.')) return;
+  await window.gutCheck.data.deleteAll();
+  $('dataMessage').textContent = 'All sessions and recordings were deleted.';
+};
 
 document.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => go(b.dataset.go); });
 
@@ -410,7 +453,8 @@ async function beginSession() {
     speed = Number($('demoSpeed').value);
     source = new ReplaySource(await window.gutCheck.readRecording(name), { speed, loop: true });
   } else {
-    if (!state.info.hasKey) return setupError('No Presage API key found. Add PRESAGE_API_KEY to the .env file and restart.');
+    state.info = await bridge.info();
+    if (!state.info.hasKey) return setupError('Live measurement needs a Presage API key. Add yours in Settings (top right), or try the sample from the home page.');
     // The SDK opens the camera itself, so the preview has to let go of it first.
     if (!(await applyCameraChoice())) return setupError('Pick a camera first.');
     closeCamera();
@@ -630,9 +674,48 @@ function verdictText(v) {
   }
 }
 
+function choiceLabel(session) {
+  const c = session.choice;
+  if (!c) return '';
+  return c.optionIndex == null ? 'still deciding' : `"${session.options[c.optionIndex].label}"`;
+}
+
+// "What did you decide?": only for real sessions saved in the journal.
+function renderChoice(result, sessionName) {
+  const card = $('choiceCard');
+  const show = !!sessionName && !result.demo && !result.sample;
+  card.classList.toggle('hidden', !show);
+  if (!show) return;
+  let selected = result.choice ? result.choice.optionIndex : undefined;
+  const buttons = $('choiceButtons');
+  buttons.innerHTML = '';
+  const choices = [...result.options.map((o, i) => ({ label: o.label, value: i })), { label: 'Still deciding', value: null }];
+  for (const c of choices) {
+    const b = document.createElement('button');
+    b.className = `choice-btn${selected === c.value ? ' selected' : ''}`;
+    b.textContent = c.label;
+    b.onclick = () => {
+      selected = c.value;
+      buttons.querySelectorAll('.choice-btn').forEach((x) => x.classList.toggle('selected', x === b));
+    };
+    buttons.appendChild(b);
+  }
+  $('choiceNote').value = result.choice?.note || '';
+  $('choiceSaved').textContent = result.choice ? `Saved ${new Date(result.choice.at).toLocaleDateString()}: you chose ${choiceLabel(result)}.` : '';
+  $('saveChoice').onclick = async () => {
+    if (selected === undefined) {
+      $('choiceSaved').textContent = 'Pick one of the options first.';
+      return;
+    }
+    result.choice = await window.gutCheck.setChoice(sessionName, { optionIndex: selected, note: $('choiceNote').value });
+    $('choiceSaved').textContent = `Saved: you chose ${choiceLabel(result)}.`;
+  };
+}
+
 function renderResults(result, sessionName, recordingName, { sample = false } = {}) {
   const a = analyzeSession(result);
   $('sampleBanner').classList.toggle('hidden', !sample);
+  renderChoice(result, sample ? null : sessionName);
   console.log(`Session done (completed=${result.completed}): verdict ${JSON.stringify(a.verdict)} · visits `
     + a.visits.map((v) => `${v.label}#${v.visit} pulse ${fmt(v.stats.pulse, 1)} (n${v.stats.pulseReadings})`).join(' · ')
     + ` · saved ${sessionName}`);
@@ -829,8 +912,9 @@ async function renderHistory() {
     if (!session.options || session.options.length < 2) continue;
     const a = analyzeSession(session);
 
-    const item = document.createElement('button');
+    const item = document.createElement('div');
     item.className = 'history-item';
+    item.tabIndex = 0;
     const left = document.createElement('div');
     const title = document.createElement('div');
     title.className = 'title';
@@ -858,14 +942,32 @@ async function renderHistory() {
     meta.className = 'meta';
     meta.textContent = sessionDate(name);
     left.append(title, meta);
+    if (session.choice) {
+      const chose = document.createElement('div');
+      chose.className = 'chose';
+      chose.textContent = `You chose: ${choiceLabel(session)}`;
+      left.appendChild(chose);
+    }
     const verdict = document.createElement('div');
     verdict.className = 'verdict';
     verdict.textContent = verdictText(a.verdict).title;
-    item.append(left, verdict);
-    item.onclick = () => {
+    const del = document.createElement('button');
+    del.className = 'delete';
+    del.textContent = 'Delete';
+    del.title = 'Delete this session and its recording';
+    del.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Delete "${session.options[0].label}" or "${session.options[1].label}" from ${sessionDate(name)}? This cannot be undone.`)) return;
+      await window.gutCheck.deleteSession(name);
+      item.remove();
+    };
+    item.append(left, verdict, del);
+    const open = () => {
       renderResults(session, name, session.recording);
       go('results');
     };
+    item.onclick = open;
+    item.onkeydown = (e) => { if (e.key === 'Enter') open(); };
     list.appendChild(item);
   }
   if (!list.children.length) {
@@ -890,6 +992,10 @@ async function renderHistory() {
     location.href = 'lab.html';
   } else if (auto === 'screen:sample') {
     await openSample();
+  } else if (auto.startsWith('open:')) {
+    const name = auto.slice(5);
+    renderResults(JSON.parse(await window.gutCheck.readSession(name)), name, null);
+    await go('results');
   } else if (auto === 'sample:replay') {
     await openSample();
     $('watchSample').click();

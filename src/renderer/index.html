@@ -22,6 +22,7 @@
       <button data-go="options" class="nav">New check</button>
       <button data-go="history" class="nav">Journal</button>
       <a href="lab.html" class="nav">Signal Lab</a>
+      <button data-go="settings" class="nav">Settings</button>
       <span id="todayDate" class="today"></span>
     </nav>
   </header>
@@ -250,6 +251,17 @@
         </div>
       </div>
 
+      <div id="choiceCard" class="card choice hidden">
+        <h3>What did you decide?</h3>
+        <p class="muted">Come back once you've made the decision. Over time your Journal shows whether your choice matched what your body did.</p>
+        <div id="choiceButtons" class="row"></div>
+        <textarea id="choiceNote" rows="2" maxlength="500" placeholder="Optional: how do you feel about it now?"></textarea>
+        <div class="row">
+          <button id="saveChoice" class="primary">Save to journal</button>
+          <span id="choiceSaved" class="muted"></span>
+        </div>
+      </div>
+
       <details class="card details">
         <summary>Details and method</summary>
         <div id="resultsTable"></div>
@@ -271,6 +283,41 @@
       <h2>Your past Gut Checks</h2>
       <p class="lead">Every decision you've checked, newest first. Open one to read its mirror again. Everything stays on this computer.</p>
       <div id="historyList" class="history-list"></div>
+    </div>
+  </section>
+
+  <!-- 8. Settings -->
+  <section id="screen-settings" class="screen">
+    <div class="center narrow">
+      <p class="eyebrow">Settings</p>
+      <h2>Settings &amp; your data</h2>
+
+      <div class="card">
+        <h3>Presage API key</h3>
+        <p class="muted">Live measurement needs a free key from Presage (physiology.presagetech.com). It is stored
+          encrypted on this computer only. The sample session works without one.</p>
+        <p>Status: <b id="keyStatus">—</b></p>
+        <div class="row">
+          <input id="keyInput" type="password" placeholder="Paste your API key" autocomplete="off" spellcheck="false">
+          <button id="saveKey" class="primary">Save key</button>
+          <button id="removeKey" class="ghost">Remove</button>
+        </div>
+        <p id="keyMessage" class="fine"></p>
+      </div>
+
+      <div class="card">
+        <h3>Your data</h3>
+        <ul class="data-facts">
+          <li>Saved: options, phase timings and numbers (pulse, breathing, blinks, expressions). <b>Never video.</b></li>
+          <li>Kept only on this computer, in: <code id="dataDir"></code></li>
+          <li>SDK telemetry is <b>off</b>. The SDK contacts Presage only to check the API key.</li>
+        </ul>
+        <div class="row">
+          <button id="openDataFolder">Open data folder</button>
+          <button id="deleteAllData" class="danger">Delete all my data</button>
+        </div>
+        <p id="dataMessage" class="fine"></p>
+      </div>
     </div>
   </section>
 

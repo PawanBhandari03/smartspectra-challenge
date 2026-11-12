@@ -1,15 +1,41 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, safeStorage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { SmartSpectraSDK, CameraSelection } = require('@smartspectra/node-sdk');
 const { REQUESTED_METRICS } = require('../core/metrics');
 
 const appRoot = app.getAppPath();
-require('dotenv').config({ path: path.join(appRoot, '.env'), quiet: true });
 
-const apiKey = process.env.PRESAGE_API_KEY || '';
-const recordingsDir = path.join(appRoot, 'recordings');
+// In development the key comes from .env and data lives in the project folder. An installed app
+// can't write inside its own (read-only) package, so it uses the per-user app data folder and a
+// key saved (encrypted) from Settings.
+if (!app.isPackaged) require('dotenv').config({ path: path.join(appRoot, '.env'), quiet: true });
+const dataRoot = app.isPackaged ? app.getPath('userData') : appRoot;
+const recordingsDir = path.join(dataRoot, 'recordings');
+const sessionsDir = path.join(dataRoot, 'sessions');
+const keyFile = path.join(app.getPath('userData'), 'presage-key.bin');
 const CAPTURE = { width: 1280, height: 720, fps: 30 };
+
+// The saved key is decrypted once at startup and kept in memory.
+let savedKey = '';
+
+async function loadSavedKey() {
+  try {
+    if (!fs.existsSync(keyFile) || !(await safeStorage.isAsyncEncryptionAvailable())) return;
+    savedKey = (await safeStorage.decryptStringAsync(fs.readFileSync(keyFile))).result;
+  } catch {
+    savedKey = '';
+  }
+}
+
+function apiKey() {
+  return process.env.PRESAGE_API_KEY || savedKey;
+}
+
+function keySource() {
+  if (process.env.PRESAGE_API_KEY) return 'env';
+  return savedKey ? 'saved' : 'none';
+}
 
 let win = null;
 let sdk = null;
@@ -65,7 +91,7 @@ function onVideoFrame(buf, width, height, stride, pixelFormat) {
 
 function ensureSdk() {
   if (sdk) return sdk;
-  sdk = new SmartSpectraSDK({ apiKey, requestedMetrics: REQUESTED_METRICS, enableTelemetry: false });
+  sdk = new SmartSpectraSDK({ apiKey: apiKey(), requestedMetrics: REQUESTED_METRICS, enableTelemetry: false });
   for (const name of ['metrics', 'validationStatus', 'processingStatus', 'error', 'frameSentThrough']) {
     sdk.on(name, (...args) => sendEvent(name, ...args));
   }
@@ -111,7 +137,7 @@ ipcMain.handle('sdk:readiness', async () => {
 });
 
 ipcMain.handle('sdk:info', () => ({
-  version: SmartSpectraSDK.version, hasKey: !!apiKey, cameras: listCameras(), cameraId, capture: CAPTURE,
+  version: SmartSpectraSDK.version, hasKey: !!apiKey(), cameras: listCameras(), cameraId, capture: CAPTURE,
 }));
 
 ipcMain.handle('sdk:cameras', () => listCameras());
@@ -146,7 +172,11 @@ ipcMain.handle('recording:append', (_e, name, text) => {
 });
 
 // Gut Check session results: options, phase timings and the full vitals time series.
-const sessionsDir = path.join(appRoot, 'sessions');
+function safeSessionPath(name) {
+  const base = path.basename(String(name));
+  if (!base.endsWith('.json')) throw new Error('Not a session file');
+  return path.join(sessionsDir, base);
+}
 
 ipcMain.handle('session:save', (_e, json) => {
   fs.mkdirSync(sessionsDir, { recursive: true });
@@ -168,10 +198,61 @@ ipcMain.handle('session:list', () => {
   return fs.readdirSync(sessionsDir).filter((f) => f.endsWith('.json')).sort().reverse();
 });
 
-ipcMain.handle('session:read', (_e, name) => {
-  const base = path.basename(String(name));
-  if (!base.endsWith('.json')) throw new Error('Not a session file');
-  return fs.readFileSync(path.join(sessionsDir, base), 'utf8');
+ipcMain.handle('session:read', (_e, name) => fs.readFileSync(safeSessionPath(name), 'utf8'));
+
+// Records what the person actually decided, after the fact. Only this one field can be changed.
+ipcMain.handle('session:setChoice', (_e, name, choice) => {
+  const file = safeSessionPath(name);
+  const session = JSON.parse(fs.readFileSync(file, 'utf8'));
+  session.choice = choice
+    ? { optionIndex: choice.optionIndex ?? null, note: String(choice.note || '').slice(0, 500), at: new Date().toISOString() }
+    : null;
+  fs.writeFileSync(file, JSON.stringify(session), 'utf8');
+  return session.choice;
+});
+
+// Deletes a session and the raw recording it was made from.
+ipcMain.handle('session:delete', (_e, name) => {
+  const file = safeSessionPath(name);
+  if (!fs.existsSync(file)) return;
+  let recording = null;
+  try { recording = JSON.parse(fs.readFileSync(file, 'utf8')).recording; } catch { /* unreadable session */ }
+  fs.rmSync(file);
+  if (recording) fs.rmSync(safeRecordingPath(recording), { force: true });
+});
+
+// ---------- Settings & data ----------
+
+ipcMain.handle('settings:get', async () => ({
+  keySource: keySource(),
+  encryptionAvailable: await safeStorage.isAsyncEncryptionAvailable(),
+  dataDir: dataRoot,
+  telemetry: false,
+}));
+
+ipcMain.handle('settings:saveKey', async (_e, key) => {
+  const value = String(key || '').trim();
+  if (!value) throw new Error('The key is empty');
+  if (!(await safeStorage.isAsyncEncryptionAvailable())) throw new Error('Secure storage is not available on this computer');
+  fs.mkdirSync(path.dirname(keyFile), { recursive: true });
+  fs.writeFileSync(keyFile, await safeStorage.encryptStringAsync(value));
+  savedKey = value;
+  await destroySdk(); // the next measurement starts with the new key
+  return keySource();
+});
+
+ipcMain.handle('settings:removeKey', async () => {
+  fs.rmSync(keyFile, { force: true });
+  savedKey = '';
+  await destroySdk();
+  return keySource();
+});
+
+ipcMain.handle('data:openFolder', () => shell.openPath(dataRoot));
+
+ipcMain.handle('data:deleteAll', () => {
+  fs.rmSync(sessionsDir, { recursive: true, force: true });
+  fs.rmSync(recordingsDir, { recursive: true, force: true });
 });
 
 ipcMain.handle('gutcheck:listRecordings', () => {
@@ -229,7 +310,7 @@ function createWindow() {
 // Groups the window under its own taskbar entry and icon on Windows (instead of Electron's).
 if (process.platform === 'win32') app.setAppUserModelId('com.pawanbhandari.gutcheck');
 
-app.whenReady().then(createWindow);
+app.whenReady().then(loadSavedKey).then(createWindow);
 
 let quitting = false;
 app.on('before-quit', (e) => {
