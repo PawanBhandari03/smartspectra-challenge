@@ -1,0 +1,109 @@
+# Validation
+
+**Can a webcam tell which of two options your body prefers?** We tried to fool our own app before trusting it. This file has every number, including the ones that went against us.
+
+![Validation results](images/validation.svg)
+
+## Summary
+
+| Session (Nov 12, daylight) | What should happen | Round 1 | Round 2 | CrossRoads said |
+|---|---|---|---|---|
+| **Control:** "drink tea" vs "drink coffee" | nothing to find | coffee +5.0 bpm | coffee +3.9 bpm | **Didn't pick a side** ✓ |
+| **Real decision:** "stay in my city" vs "move to Bangalore" | unknown | Bangalore −2.3 | Bangalore +9.0 | **Didn't pick a side** (rounds disagree) |
+| **Positive control:** "a quiet afternoon at the beach" vs "giving a speech to 1,000 people with no preparation" | a real reaction | speech +10.0 | speech +8.1 | **Calmer with the beach** ✓ |
+
+The app stays quiet when there is nothing to find and speaks up when there is a real reaction. Three sessions from one person are encouraging, not proof.
+
+## 1. The first design failed its own control (Nov 11)
+
+The first version visited each option **once** and compared it with a calm baseline. Two sessions at night:
+
+| Session | Pulse gap (means) | Pulse gap (medians of reliable readings) |
+|---|---|---|
+| "drink tea" vs "drink coffee" (should be zero) | 8.0 bpm | 4.1 bpm |
+| "stay in my city" vs "move to Bangalore" | 6.6 bpm | 2.0 bpm |
+
+- The **control showed a bigger "difference" than the real decision**.
+- In both sessions the option imagined **second** came out higher: the body drifts during a session, and one visit per option turns that drift into a fake preference.
+- Every option looked more aroused than the baseline: imagining your own life is more stimulating than picturing a cup of tea.
+
+**Conclusion:** single visits cannot tell options apart. The app was redesigned.
+
+## 2. The redesign: ask twice
+
+- Exactly two options, each visited **twice in a mirrored order** (A B B A or B A A B, chosen at random). Linear drift then affects both options equally.
+- Options are compared **with each other**, never with the baseline.
+- **Pulse only** for the verdict (see [SDK-NOTES.md](SDK-NOTES.md) for why breathing, HRV and expressions are not voted).
+- Per visit: the **median** of reliable readings in the last 25 s of the 40 s visit.
+
+![Session timeline](images/session-timeline.svg)
+
+## 3. Calibrating the threshold on real data
+
+To find out how big a gap appears **by pure chance**, we cut the pulse series of the two night sessions into fake A-B-B-A sessions at many offsets, so the labels meant nothing (47 overlapping windows, one-minute blocks).
+
+| Rule tested on the fake sessions | Fake "winners" |
+|---|---|
+| Both rounds agree and the average gap beats the visit-to-visit wobble | 87% |
+| Both rounds agree and each beats the wobble | 81% |
+| Both rounds agree and the average gap beats twice the wobble | 81% |
+| Both rounds agree, each beats the wobble, and the gap is ≥ 5 bpm | 72% |
+| **Both rounds agree and each beats max(wobble, 6 bpm)** | **26%** |
+
+Gaps between meaningless blocks were 6.4 bpm (median), 8.4 bpm (90th percentile), up to 9.1 bpm. **A resting pulse wobbles 6–9 bpm from minute to minute by itself.** CrossRoads uses the strictest rule, and even it would fake a winner about one time in four on this (pessimistic, overlapping) data. That is why the product is **a mirror, not a verdict**: the results show what the body did, and a calmer option is named only when the evidence is strong.
+
+The rule, as implemented in [`src/core/analysis.js`](../src/core/analysis.js):
+
+![Verdict flow](images/verdict-flow.svg)
+
+## 4. The three validation sessions (Nov 12)
+
+Setup: daylight from a window, Samsung phone as the camera through Windows Phone Link (steady 30 fps), sitting back, reading prompts silently.
+
+**Per-visit medians** (bpm, reliable readings in brackets):
+
+| Session | Order | A₁ | B₁ | A₂ | B₂ | Wobble | Verdict |
+|---|---|---|---|---|---|---|---|
+| Control (A = tea, B = coffee) | A B B A | 61.0 (26) | 66.0 (26) | 63.8 (27) | 67.7 (29) | 2.2 | didn't pick a side |
+| Real (A = city, B = Bangalore) | B A A B | 62.1 (27) | 59.8 (15) | 61.6 (26) | 70.6 (31) | 5.7 | didn't pick a side |
+| Positive (A = beach, B = speech) | B A A B | 73.9 (13) | 83.9 (9) | 69.7 (14) | 77.9 (20) | 5.1 | calmer with the beach |
+
+**Signal quality:**
+
+| Session | Pulse readings | Marked stable | Mean confidence |
+|---|---|---|---|
+| Control | 251 | 94% | 81 / 100 |
+| Real decision | 247 | 94% | 79 / 100 |
+| Positive control | 284 | 75% | 56 / 100 |
+
+Notes:
+
+- In the control, tea was lower in both rounds (by 5.0 and 3.9 bpm). A looser rule would have announced "calmer with tea"; the 6 bpm floor correctly refused.
+- The positive control had weaker signal; its first speech visit kept 9 reliable readings (the minimum is 8). The verdict is valid but close to the data-quality edge.
+- The real decision's rounds pointed in opposite directions. "Didn't pick a side" is the honest answer, not a failure.
+
+The positive control is bundled with the app as the [sample session](../samples/beach-vs-speech) (camera name removed). Anyone can check its numbers:
+
+```bash
+npm run analyze
+```
+
+## 5. What changed because of the data
+
+| Finding | Change |
+|---|---|
+| Single visits confuse drift with preference | A B B A design |
+| One-minute blocks wobble 6–9 bpm by chance | 6 bpm floor + both rounds must agree |
+| After a low-confidence stretch the SDK reported ~93–97 bpm for a person resting at ~62–78, sometimes flagged "stable" | readings in the 10 s after a low-confidence stretch are ignored |
+| Occasional physically impossible jumps | plausibility gate: max(8 bpm, 3.5 bpm/s); re-checked that no real verdict changed |
+| At night a neutral face read "sad" 80–95%; in daylight 86–92% "neutral" | expressions are timeline-only; the app asks for front light |
+| HRV appeared only after ~60 s with confidence ~10 | HRV removed from the results |
+| 6-minute sessions were uncomfortable and overheated the phone camera | 4-minute sessions (30 s baseline, 40 s visits, 10 s resets) |
+
+## 6. Limits
+
+- **One person, three validation sessions.** Not a study. A real evaluation would need many people and repeated sessions.
+- **The 26% figure is rough**: two source sessions, overlapping windows, an earlier block length.
+- **Pulse is a ~12 s rolling average from the SDK.** CrossRoads cannot see second-by-second reactions; "moments" are reflection cues within normal wobble, not measurements.
+- **A higher pulse is not "worse".** Excitement and fear both raise it; the app asks which it was.
+- **Not a medical device** and no accuracy claims against clinical equipment. CrossRoads only compares a person with themselves within one session.
