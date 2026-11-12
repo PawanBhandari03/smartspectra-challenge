@@ -155,6 +155,14 @@ ipcMain.handle('session:save', (_e, json) => {
   return name;
 });
 
+// The bundled sample (beach vs speech positive control, recorded by the developer, camera name redacted).
+const sampleDir = path.join(appRoot, 'samples', 'beach-vs-speech');
+
+ipcMain.handle('sample:read', () => ({
+  session: fs.readFileSync(path.join(sampleDir, 'session.json'), 'utf8'),
+  recording: fs.readFileSync(path.join(sampleDir, 'recording.jsonl'), 'utf8'),
+}));
+
 ipcMain.handle('session:list', () => {
   if (!fs.existsSync(sessionsDir)) return [];
   return fs.readdirSync(sessionsDir).filter((f) => f.endsWith('.json')).sort().reverse();

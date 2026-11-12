@@ -51,10 +51,10 @@ function optionPrompts(option, visit) {
 // options: exactly two [{ label, detail }]. Visits follow a mirrored order, A B B A or B A A B
 // (chosen at random): the body drifts during a session (usually more aroused or more relaxed over
 // time), and a mirrored order spreads that drift evenly over both options.
-function buildPlan(options, { timing = TIMING, rand = Math.random } = {}) {
+function buildPlan(options, { timing = TIMING, rand = Math.random, order: fixedOrder = null } = {}) {
   if (options.length !== 2) throw new Error('Gut Check compares exactly two options');
   const [first, second] = rand() < 0.5 ? [0, 1] : [1, 0];
-  const order = [first, second, second, first];
+  const order = fixedOrder || [first, second, second, first];
   const visitCount = [0, 0];
   const phases = [
     { kind: 'settle', prompts: ['Getting your signal ready. Sit comfortably and face the screen.'] },
@@ -84,12 +84,15 @@ class Emitter {
 // Both the settle phase and the whole session have hard time limits, so a live session can never
 // keep spending credits indefinitely.
 class SessionRunner extends Emitter {
-  constructor(plan, source, { speed = 1, demo = false } = {}) {
+  // `script`: the phases of a saved session. When given, phase changes follow its recorded timing
+  // instead of the timers and readiness checks, so a replay shows exactly what happened.
+  constructor(plan, source, { speed = 1, demo = false, script = null } = {}) {
     super();
     this.plan = plan;
     this.source = source;
     this.speed = speed;
     this.demo = demo;
+    this.script = script;
     this.phaseIndex = -1;
     this.phaseTimes = [];
     this.series = { pulse: [], breathing: [], hrv: [], expression: [], blinks: [], fps: [], validation: [] };
@@ -159,7 +162,19 @@ class SessionRunner extends Emitter {
       return;
     }
 
-    if (p.kind === 'settle') {
+    if (this.script) {
+      const now = this.now();
+      const last = this.script[this.script.length - 1];
+      if (last.endMs != null && now >= last.endMs) {
+        this.finish();
+        return;
+      }
+      const next = this.script[this.phaseIndex + 1];
+      if (next && now >= next.startMs) {
+        this._enter(this.phaseIndex + 1);
+        return;
+      }
+    } else if (p.kind === 'settle') {
       readiness = this.readiness();
       if (elapsed >= timing.settleMinMs && readiness.ready) {
         this._enter(this.phaseIndex + 1);

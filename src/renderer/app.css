@@ -141,6 +141,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 1
 .steps span:not(.step-num) { color: var(--muted); font-size: 13.5px; }
 .step-num { font-family: var(--serif); font-style: italic; color: var(--accent); font-size: 18px; min-width: 22px; }
 
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+button.secondary { background: transparent; border-color: var(--ink); color: var(--ink); font-weight: 600; }
+button.secondary:hover:not(:disabled) { background: var(--sheet); }
+button.secondary .muted { font-weight: 400; }
+
+.sample-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--accent-soft); border: 1px solid #c9d9cd; border-radius: 8px; padding: 12px 16px; margin-bottom: 22px; color: var(--ink-2); font-size: 14px; }
+.sample-banner b { color: var(--ink); }
+.sample-banner button { flex: none; }
+
 /* ---------- Options ---------- */
 
 .option-list { display: flex; flex-direction: column; gap: 14px; }

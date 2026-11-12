@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('gutCheck', {
   },
   saveSession: (json) => ipcRenderer.invoke('session:save', json),
   listSessions: () => ipcRenderer.invoke('session:list'),
+  readSample: () => ipcRenderer.invoke('sample:read'),
   readSession: (name) => ipcRenderer.invoke('session:read', name),
   listRecordings: () => ipcRenderer.invoke('gutcheck:listRecordings'),
   readRecording: (name) => ipcRenderer.invoke('gutcheck:readRecording', name),

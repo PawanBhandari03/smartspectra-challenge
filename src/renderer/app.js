@@ -421,9 +421,16 @@ async function beginSession() {
     });
   }
 
-  const plan = buildPlan(state.options);
-  const runner = new SessionRunner(plan, source, { speed, demo });
-  Object.assign(state, { source, runner, plan, demo });
+  const intro = demo
+    ? `Demo session: replaying ${$('demoRecording').selectedOptions[0]?.textContent} at ${speed}×`
+    : `Live session with ${$('cameraSelect').selectedOptions[0].textContent}`;
+  await runSession(source, buildPlan(state.options), { speed, demo, intro });
+}
+
+// Runs a session from any source: live camera, a demo replay, or the scripted sample replay.
+async function runSession(source, plan, { speed = 1, demo = false, script = null, intro = '', sampleReplay = false }) {
+  const runner = new SessionRunner(plan, source, { speed, demo, script });
+  Object.assign(state, { source, runner, plan, demo, sampleReplay });
 
   runner.on('phase', onPhase);
   runner.on('tick', onTick);
@@ -465,10 +472,11 @@ async function beginSession() {
   $('heartIcon').classList.remove('beating');
   renderLiveVitals();
   $('sessionLog').textContent = '';
-  sessionLog(demo ? `Demo session: replaying ${$('demoRecording').selectedOptions[0]?.textContent} at ${speed}×` : `Live session with ${$('cameraSelect').selectedOptions[0].textContent}`);
-  sessionLog(`Options: "${state.options[0].label}" vs "${state.options[1].label}"`);
+  sessionLog(intro);
+  sessionLog(`Options: "${plan.options[0].label}" vs "${plan.options[1].label}"`);
   thumbCtx.clearRect(0, 0, $('thumbCanvas').width, $('thumbCanvas').height);
-  $('liveNote').textContent = demo ? 'Demo: replaying recorded data (no camera)' : 'Starting the camera…';
+  $('liveNote').textContent = sampleReplay ? 'Sample: replaying a recorded session (no camera)'
+    : demo ? 'Demo: replaying recorded data (no camera)' : 'Starting the camera…';
   $('liveNote').classList.remove('hidden');
 
   buildPhaseBar(plan);
@@ -479,7 +487,8 @@ async function beginSession() {
   $('optionTitle').classList.add('hidden');
   $('settleChecks').classList.add('hidden');
   $('guidance').classList.add('hidden');
-  $('thumbBadge').textContent = demo ? `DEMO ${speed}×` : '● REC';
+  $('thumbBadge').textContent = sampleReplay ? `SAMPLE ${speed}×` : demo ? `DEMO ${speed}×` : '● REC';
+  $('stopSession').textContent = sampleReplay ? 'Exit replay' : 'Stop session';
   $('thumbBadge').classList.toggle('demo', demo);
   go('session');
 
@@ -519,6 +528,12 @@ async function endWithError(message) {
 }
 
 $('stopSession').onclick = async () => {
+  if (state.sampleReplay) {
+    await stopSource();
+    state.source = null;
+    await openSample();
+    return;
+  }
   if (!confirm('Stop this session? You will see results for the parts you finished.')) return;
   const result = state.runner?.abort();
   if (!result) {
@@ -532,6 +547,13 @@ async function finishSession(result) {
   if (finishing) return;
   finishing = true;
   await stopSource();
+  if (state.sampleReplay) {
+    // The replay is only a walkthrough; the sample's own saved results are what we show.
+    state.source = null;
+    finishing = false;
+    await openSample();
+    return;
+  }
   const recordingName = state.source?.recordingName;
   const sessionName = await window.gutCheck.saveSession(JSON.stringify({ ...result, recording: recordingName || null }));
   state.source = null;
@@ -539,6 +561,41 @@ async function finishSession(result) {
   renderResults(result, sessionName, recordingName);
   go('results');
 }
+
+// ---------- Sample session (no camera, no API key) ----------
+
+let sampleCache = null;
+
+async function loadSample() {
+  if (!sampleCache) {
+    const raw = await window.gutCheck.readSample();
+    sampleCache = { session: JSON.parse(raw.session), recording: raw.recording };
+  }
+  return sampleCache;
+}
+
+async function openSample() {
+  const { session } = await loadSample();
+  renderResults(session, null, null, { sample: true });
+  await go('results');
+}
+
+$('trySample').onclick = openSample;
+
+const SAMPLE_REPLAY_SPEED = 5;
+
+$('watchSample').onclick = async () => {
+  const { session, recording } = await loadSample();
+  const plan = buildPlan(session.options, { timing: session.timing, order: session.order });
+  const source = new ReplaySource(recording, { speed: SAMPLE_REPLAY_SPEED });
+  await runSession(source, plan, {
+    speed: SAMPLE_REPLAY_SPEED,
+    demo: true,
+    script: session.phases,
+    sampleReplay: true,
+    intro: `Sample session replay at ${SAMPLE_REPLAY_SPEED}× (recorded by the developer)`,
+  });
+};
 
 // ---------- Results: "a mirror, not a verdict" ----------
 
@@ -573,8 +630,9 @@ function verdictText(v) {
   }
 }
 
-function renderResults(result, sessionName, recordingName) {
+function renderResults(result, sessionName, recordingName, { sample = false } = {}) {
   const a = analyzeSession(result);
+  $('sampleBanner').classList.toggle('hidden', !sample);
   console.log(`Session done (completed=${result.completed}): verdict ${JSON.stringify(a.verdict)} · visits `
     + a.visits.map((v) => `${v.label}#${v.visit} pulse ${fmt(v.stats.pulse, 1)} (n${v.stats.pulseReadings})`).join(' · ')
     + ` · saved ${sessionName}`);
@@ -628,8 +686,10 @@ function renderResults(result, sessionName, recordingName) {
   $('resultsTable').innerHTML = '';
   $('resultsTable').appendChild(table);
 
-  $('resultsFiles').textContent = `${result.demo ? 'Demo session (recorded data). ' : ''}`
-    + `Saved: sessions/${sessionName}${recordingName ? ` · recordings/${recordingName}` : ''}`;
+  $('resultsFiles').textContent = sample
+    ? 'Sample session bundled with the app (camera name removed; numbers only, no video).'
+    : `${result.demo ? 'Demo session (recorded data). ' : ''}`
+      + `Saved: sessions/${sessionName}${recordingName ? ` · recordings/${recordingName}` : ''}`;
 }
 
 function swatch(color) {
@@ -828,6 +888,11 @@ async function renderHistory() {
   // Dev/testing hooks: "screen:<name>" opens a screen; a recording name runs a full demo session.
   if (auto === 'screen:lab') {
     location.href = 'lab.html';
+  } else if (auto === 'screen:sample') {
+    await openSample();
+  } else if (auto === 'sample:replay') {
+    await openSample();
+    $('watchSample').click();
   } else if (auto.startsWith('screen:')) {
     await go(auto.slice(7));
   } else if (auto) {

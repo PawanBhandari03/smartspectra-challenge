@@ -42,7 +42,10 @@
         <li><span class="step-num">ii.</span><div><b>Imagine each, twice</b><span>short guided scenes, about four minutes</span></div></li>
         <li><span class="step-num">iii.</span><div><b>Read your mirror</b><span>what your body did, honestly reported</span></div></li>
       </ol>
-      <button id="welcomeNext" class="primary big">Begin a Gut Check <span aria-hidden="true">→</span></button>
+      <div class="hero-actions">
+        <button id="welcomeNext" class="primary big">Begin a Gut Check <span aria-hidden="true">→</span></button>
+        <button id="trySample" class="big secondary">Try the sample <span class="muted">· no camera needed</span></button>
+      </div>
       <p class="fine">A reflection tool for general wellness, not medical advice. Video never leaves your computer.</p>
     </div>
   </section>
@@ -214,6 +217,13 @@
   <!-- 6. Results -->
   <section id="screen-results" class="screen">
     <div class="center wide">
+      <div id="sampleBanner" class="sample-banner hidden">
+        <div>
+          <b>Sample session.</b> Recorded by the developer as a test: one calm scene and one stressful scene,
+          each imagined twice. Your own sessions are never shared.
+        </div>
+        <button id="watchSample" class="secondary">▶ Watch the replay</button>
+      </div>
       <p id="resultsDate" class="letterhead"></p>
       <h2 id="resultsTitle" class="results-title"></h2>
       <p id="resultsNote" class="lead"></p>
