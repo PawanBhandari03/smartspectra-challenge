@@ -25,8 +25,8 @@ function median(values) {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-// After the signal drops out, the SDK's first readings can be wildly off (Nov 12: ~97 bpm for a few
-// seconds in a person resting at ~62), so readings right after a gap are skipped while it re-settles.
+// After a low-confidence stretch the SDK's next readings can be wildly off, sometimes even flagged
+// stable (Nov 12: ~93-97 bpm in a person resting at ~62-78), so they are skipped while it re-settles.
 const DROPOUT = { gapMs: 4000, resettleMs: 10000 };
 
 function cleanReadings(points) {

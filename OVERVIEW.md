@@ -225,9 +225,12 @@ smartspectra-challenge/
 |---|---|---|---|
 | Control: "drink tea" vs "drink coffee" | tea −5.0 bpm | tea −3.9 bpm | **Didn't pick a side** ✓ (a looser "beat the wobble" rule would have wrongly said "calmer with tea") |
 | Real: "stay in my city" vs "move to Bangalore" | Bangalore +2.3 | Bangalore +9.0 | **Didn't pick a side** (rounds inconsistent) |
+| Positive control: "a quiet afternoon at the beach" vs "giving a speech to 1,000 people with no preparation" | speech +9.6 | speech +8.1 | **Calmer with the beach** ✓ (both rounds beyond the 6 bpm floor; visit wobble 4.9) |
+
+The control pair shows the rule works in both directions: it stays quiet when there is nothing to find (tea vs coffee) and speaks up when there is a real reaction (beach vs speech). The positive-control session had weaker signal (mean confidence ~56 vs ~80; the shortest visit kept 10 reliable readings), so it is one encouraging run, not proof.
 
 - Daylight made a big difference: steady 30 fps, face OK the whole session, 94% stable pulse readings, mean confidence ~80 (vs ~50 at night). Expressions read "neutral" 86–92% (at night the same face read "sad"): the "sad" bias was the lighting.
-- Found and fixed an artifact: after a short signal dropout, the SDK briefly reported ~97 bpm for someone resting at ~62. Readings in the 10 s after any dropout are now ignored (`cleanReadings` in `analysis.js`); this removed a fake "−23 bpm calmest moment" and a fake "+11 bpm" moment.
+- Found and fixed an artifact: when the SDK's confidence dips (to ~0–30) for a few seconds, the readings right after often spike (~93–97 bpm for someone resting at ~62–78), sometimes even flagged "stable" with high confidence. Readings in the 10 s after any low-confidence stretch are now ignored (`cleanReadings` in `analysis.js`); this removed a fake "−23 bpm calmest moment" and a fake "+11 bpm" moment.
 
 **Product decision (Nov 11): "a mirror, not a verdict".** The results screen shows *what your body did* rather than declaring a winner:
 - two option cards (average pulse, each visit, blinks); an option is tagged "Calmer" only when the strict rule above passes

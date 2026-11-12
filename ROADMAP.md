@@ -51,7 +51,8 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Results screen: option cards, pulse timeline (hover shows the prompt on screen), "moments your body reacted", reflection questions, method + limits
 - [x] 💳 👤 ABBA null test (tea vs coffee) → "didn't pick a side" ✓ (Nov 12)
 - [x] 💳 👤 ABBA real decision session → "didn't pick a side" (rounds inconsistent) (Nov 12)
-- [x] Fix: ignore readings for 10 s after a signal dropout (SDK spikes on resume)
+- [x] Fix: ignore readings for 10 s after a low-confidence stretch (SDK spikes afterwards)
+- [x] 💳 👤 Positive control (beach vs speech) → "calmer with the beach" in both rounds ✓ (Nov 12)
 
 ## Phase 4 — Polish (Nov 18–19)
 - [x] Visual design: colour brand, top bar + navigation, new welcome page, coloured signal tiles
