@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, safeStorage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { SmartSpectraSDK, CameraSelection } = require('@smartspectra/node-sdk');
@@ -284,6 +284,29 @@ function createWindow() {
   // Mirror renderer console output into the terminal so problems are visible without DevTools.
   win.webContents.on('console-message', (event) => {
     console.log(`[renderer] ${event.message}`);
+  });
+
+  // Electron has no right-click menu by default: offer the usual editing actions.
+  win.webContents.on('context-menu', (_e, params) => {
+    const { editFlags } = params;
+    let template;
+    if (params.isEditable) {
+      template = [
+        { role: 'undo', enabled: editFlags.canUndo },
+        { role: 'redo', enabled: editFlags.canRedo },
+        { type: 'separator' },
+        { role: 'cut', enabled: editFlags.canCut },
+        { role: 'copy', enabled: editFlags.canCopy },
+        { role: 'paste', enabled: editFlags.canPaste },
+        { type: 'separator' },
+        { role: 'selectAll' },
+      ];
+    } else if (params.selectionText.trim()) {
+      template = [{ role: 'copy' }, { role: 'selectAll' }];
+    } else {
+      return;
+    }
+    Menu.buildFromTemplate(template).popup({ window: win });
   });
 
   win.loadFile(path.join(appRoot, 'src/renderer/index.html'));
