@@ -262,48 +262,17 @@ function closeCamera() {
   $('setupPlaceholder').classList.remove('hidden');
 }
 
-function sourceMode() {
-  return document.querySelector('input[name="source"]:checked').value;
-}
-
-async function refreshDemoRecordings() {
-  const names = (await window.gutCheck.listRecordings()).filter((n) => n !== 'synthetic-test.jsonl');
-  const select = $('demoRecording');
-  select.innerHTML = '';
-  for (const n of names) {
-    const opt = document.createElement('option');
-    opt.value = n;
-    const m = n.match(/session-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/);
-    const date = m ? new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`) : null;
-    opt.textContent = date ? `Recording ${date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : n;
-    select.appendChild(opt);
-  }
-}
-
-async function updateSourceUi() {
-  const demo = sourceMode() === 'demo';
-  $('demoOptions').classList.toggle('hidden', !demo);
-  if (demo) {
-    closeCamera();
-    $('setupPlaceholder').textContent = 'Demo mode: no camera needed';
-  } else {
-    await openCamera();
-  }
-}
-
 async function enterSetup() {
   const plan = buildPlan(state.options);
   const minutes = plannedDurationMs(plan) / 60000;
-  $('liveCost').textContent = `About ${Math.ceil(minutes)} minutes · uses ~${Math.ceil((minutes * 60) / 30)} Presage credits`;
+  $('liveCost').textContent = `about ${Math.ceil(minutes)} minutes · uses ~${Math.ceil((minutes * 60) / 30)} Presage credits`;
   $('setupError').classList.add('hidden');
   await refreshCameras();
-  await refreshDemoRecordings();
-  await updateSourceUi();
+  await openCamera();
 }
 
-$('cameraSelect').onchange = async () => { await applyCameraChoice(); if (sourceMode() === 'live') await openCamera(); };
-$('refreshCameras').onclick = async () => { await refreshCameras(); if (sourceMode() === 'live') await openCamera(); };
-document.querySelectorAll('input[name="source"]').forEach((r) => { r.onchange = updateSourceUi; });
+$('cameraSelect').onchange = async () => { await applyCameraChoice(); await openCamera(); };
+$('refreshCameras').onclick = async () => { await refreshCameras(); await openCamera(); };
 
 function setupError(msg) {
   $('setupError').textContent = msg;
@@ -443,32 +412,25 @@ function onTick(s) {
 }
 
 async function beginSession() {
-  const demo = sourceMode() === 'demo';
-  let source;
-  let speed = 1;
+  state.info = await bridge.info();
+  if (!state.info.hasKey) return setupError('Live measurement needs a Presage API key. Add yours in Settings (top right), or try the sample from the home page.');
+  // The SDK opens the camera itself, so the preview has to let go of it first.
+  if (!(await applyCameraChoice())) return setupError('Pick a camera first.');
+  const cameraName = $('cameraSelect').selectedOptions[0].textContent;
+  closeCamera();
+  const source = new LiveSource(bridge, window.gutCheck.recording, {
+    mode: 'gutcheck',
+    requestedMetrics: REQUESTED_METRICS,
+    camera: { name: cameraName },
+  });
+  await runSession(source, buildPlan(state.options), { intro: `Live session with ${cameraName}` });
+}
 
-  if (demo) {
-    const name = $('demoRecording').value;
-    if (!name) return setupError('No recordings yet. Do a live session first (or use the Signal Lab).');
-    speed = Number($('demoSpeed').value);
-    source = new ReplaySource(await window.gutCheck.readRecording(name), { speed, loop: true });
-  } else {
-    state.info = await bridge.info();
-    if (!state.info.hasKey) return setupError('Live measurement needs a Presage API key. Add yours in Settings (top right), or try the sample from the home page.');
-    // The SDK opens the camera itself, so the preview has to let go of it first.
-    if (!(await applyCameraChoice())) return setupError('Pick a camera first.');
-    closeCamera();
-    source = new LiveSource(bridge, window.gutCheck.recording, {
-      mode: 'gutcheck',
-      requestedMetrics: REQUESTED_METRICS,
-      camera: { name: $('cameraSelect').selectedOptions[0].textContent },
-    });
-  }
-
-  const intro = demo
-    ? `Demo session: replaying ${$('demoRecording').selectedOptions[0]?.textContent} at ${speed}×`
-    : `Live session with ${$('cameraSelect').selectedOptions[0].textContent}`;
-  await runSession(source, buildPlan(state.options), { speed, demo, intro });
+// Developer testing only: runs a full session from a raw recording (looped, re-planned, so its
+// verdict is meaningless). Not reachable from the UI; the sample replay is the user-facing path.
+async function devReplay(recordingName, speed = 20) {
+  const source = new ReplaySource(await window.gutCheck.readRecording(recordingName), { speed, loop: true });
+  await runSession(source, buildPlan(state.options), { speed, demo: true, intro: `Dev replay of ${recordingName} at ${speed}×` });
 }
 
 // Runs a session from any source: live camera, a demo replay, or the scripted sample replay.
@@ -1003,10 +965,6 @@ async function renderHistory() {
     await go(auto.slice(7));
   } else if (auto) {
     state.options = [{ label: 'Stay in my city', detail: '' }, { label: 'Move for the new job', detail: 'higher salary' }];
-    document.querySelector('input[name="source"][value="demo"]').checked = true;
-    await go('setup');
-    $('demoRecording').value = auto;
-    $('demoSpeed').value = '20';
-    await beginSession();
+    await devReplay(auto);
   }
 })();

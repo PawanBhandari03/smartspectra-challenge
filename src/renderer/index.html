@@ -111,18 +111,7 @@
             <li><b>Sit back</b> with your back supported; it takes about 4 minutes</li>
             <li>Read the prompts <b>silently</b>; stay still while you imagine</li>
           </ul>
-          <div class="source">
-            <label class="radio"><input type="radio" name="source" value="live" checked> <span><b>Live measurement</b><br><small id="liveCost"></small></span></label>
-            <label class="radio"><input type="radio" name="source" value="demo"> <span><b>Demo with recorded data</b><br><small>Free. Replays a saved recording; no camera needed.</small></span></label>
-            <div id="demoOptions" class="row hidden">
-              <select id="demoRecording"></select>
-              <select id="demoSpeed">
-                <option value="1">1× (real time)</option>
-                <option value="5">5×</option>
-                <option value="20" selected>20×</option>
-              </select>
-            </div>
-          </div>
+          <p class="session-cost"><b>Live measurement</b> · <span id="liveCost"></span></p>
           <p id="setupError" class="error hidden"></p>
           <div class="actions">
             <button class="ghost" data-go="consent">Back</button>

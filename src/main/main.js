@@ -263,7 +263,7 @@ ipcMain.handle('gutcheck:listRecordings', () => {
 ipcMain.handle('gutcheck:readRecording', (_e, name) => fs.readFileSync(safeRecordingPath(name), 'utf8'));
 
 // Dev/testing hook: GUTCHECK_AUTOREPLAY=<recording file> replays it at 10x on launch.
-ipcMain.handle('gutcheck:getAutoReplay', () => process.env.GUTCHECK_AUTOREPLAY || '');
+ipcMain.handle('gutcheck:getAutoReplay', () => (app.isPackaged ? '' : process.env.GUTCHECK_AUTOREPLAY || ''));
 
 // ---------- Window ----------
 
@@ -290,7 +290,7 @@ function createWindow() {
 
   // Dev/testing hook: GUTCHECK_SHOTS=<folder> saves a screenshot of the window every 2 s,
   // alternating between the top and the bottom of long pages.
-  const shotsDir = process.env.GUTCHECK_SHOTS;
+  const shotsDir = app.isPackaged ? null : process.env.GUTCHECK_SHOTS;
   if (shotsDir) {
     fs.mkdirSync(shotsDir, { recursive: true });
     let n = 0;

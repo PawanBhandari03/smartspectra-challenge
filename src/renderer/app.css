@@ -199,7 +199,8 @@ code { font: 12.5px Consolas, 'Cascadia Mono', monospace; background: var(--shee
 .tips li { margin-bottom: 6px; }
 .tips b { color: var(--ink); font-weight: 600; }
 
-.source { display: grid; gap: 10px; }
+.session-cost { color: var(--ink-2); margin: 0; }
+.session-cost span { color: var(--muted); }
 .radio { display: flex; gap: 10px; align-items: flex-start; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; cursor: pointer; }
 .radio small { color: var(--muted); }
 .radio:has(input:checked) { border-color: var(--ink); }
