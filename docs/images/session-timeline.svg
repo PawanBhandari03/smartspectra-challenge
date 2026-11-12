@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 356" width="960" height="356" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <pattern id="scored" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="6" height="6" fill="none"/>
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#1f1d1a" stroke-opacity="0.35" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="960" height="356" rx="14" fill="#fbf8f2" stroke="#e2d9ca"/>
+  <text x="32" y="44" font-family="Georgia, 'Times New Roman', serif" font-size="24" fill="#1f1d1a">One session: about four minutes</text>
+  <text x="32" y="68" font-size="13" fill="#847b6f">Each option is visited twice in a mirrored order (A B B A, or B A A B) so slow drift during a session affects both equally.</text>
+  <g transform="translate(0,26)">
+
+  <!-- scale: x = 40 + seconds * 3.6, total 245 s -> 922 -->
+  <!-- settle 0-15 -->
+  <rect x="40" y="110" width="54" height="56" rx="4" fill="#e2d9ca"/>
+  <text x="67" y="143" text-anchor="middle" font-size="12" fill="#4b463f">settle</text>
+  <!-- baseline 15-45 -->
+  <rect x="96" y="110" width="106" height="56" rx="4" fill="#2f5d46" fill-opacity="0.85"/>
+  <text x="149" y="137" text-anchor="middle" font-size="12" fill="#ffffff" font-weight="600">calm</text>
+  <text x="149" y="153" text-anchor="middle" font-size="12" fill="#ffffff">baseline</text>
+  <!-- A1 45-85 -->
+  <rect x="204" y="110" width="142" height="56" rx="4" fill="#2f62a8"/>
+  <rect x="258" y="110" width="88" height="56" fill="url(#scored)"/>
+  <text x="231" y="143" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="700">A</text>
+  <!-- reset -->
+  <rect x="348" y="110" width="34" height="56" rx="4" fill="#e2d9ca"/>
+  <!-- B1 95-135 -->
+  <rect x="384" y="110" width="142" height="56" rx="4" fill="#c8612e"/>
+  <rect x="438" y="110" width="88" height="56" fill="url(#scored)"/>
+  <text x="411" y="143" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="700">B</text>
+  <rect x="528" y="110" width="34" height="56" rx="4" fill="#e2d9ca"/>
+  <!-- B2 145-185 -->
+  <rect x="564" y="110" width="142" height="56" rx="4" fill="#c8612e"/>
+  <rect x="618" y="110" width="88" height="56" fill="url(#scored)"/>
+  <text x="591" y="143" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="700">B</text>
+  <rect x="708" y="110" width="34" height="56" rx="4" fill="#e2d9ca"/>
+  <!-- A2 195-235 -->
+  <rect x="744" y="110" width="142" height="56" rx="4" fill="#2f62a8"/>
+  <rect x="798" y="110" width="88" height="56" fill="url(#scored)"/>
+  <text x="771" y="143" text-anchor="middle" font-size="14" fill="#ffffff" font-weight="700">A</text>
+
+  <!-- reset labels -->
+  <text x="365" y="186" text-anchor="middle" font-size="11" fill="#847b6f">reset</text>
+  <text x="545" y="186" text-anchor="middle" font-size="11" fill="#847b6f">reset</text>
+  <text x="725" y="186" text-anchor="middle" font-size="11" fill="#847b6f">reset</text>
+
+  <!-- time axis -->
+  <line x1="40" y1="200" x2="886" y2="200" stroke="#cdbfaa"/>
+  <g font-size="11" fill="#847b6f" text-anchor="middle">
+    <text x="40" y="216">0 s</text>
+    <text x="96" y="216">15</text>
+    <text x="204" y="216">45</text>
+    <text x="384" y="216">95</text>
+    <text x="564" y="216">145</text>
+    <text x="744" y="216">195</text>
+    <text x="886" y="216">235</text>
+  </g>
+
+  <!-- round brackets -->
+  <path d="M204 96 v-8 h322 v8" fill="none" stroke="#4b463f"/>
+  <text x="365" y="82" text-anchor="middle" font-size="12.5" fill="#1f1d1a" font-weight="600">Round 1: A vs B</text>
+  <path d="M564 96 v-8 h322 v8" fill="none" stroke="#4b463f"/>
+  <text x="725" y="82" text-anchor="middle" font-size="12.5" fill="#1f1d1a" font-weight="600">Round 2: B vs A</text>
+
+  <!-- legend -->
+  <rect x="40" y="244" width="22" height="14" fill="url(#scored)" stroke="#cdbfaa"/>
+  <text x="70" y="256" font-size="12.5" fill="#4b463f">Scored window: the last 25 s of each 40 s visit (the SDK's pulse is a ~12 s rolling average, so the first 15 s still echo the previous scene)</text>
+  <text x="40" y="282" font-size="12.5" fill="#4b463f">Prompts change every 10 s and always name the option ("Move to Bangalore: a month in. How do your evenings feel?").</text>
+  <text x="40" y="304" font-size="12.5" fill="#4b463f">The settle phase only ends once the SDK reports 25+ fps, a visible face and a pulse; after 90 s it stops and explains why.</text>
+  </g>
+</svg>

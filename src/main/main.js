@@ -289,7 +289,7 @@ function createWindow() {
   win.loadFile(path.join(appRoot, 'src/renderer/index.html'));
 
   // Dev/testing hook: GUTCHECK_SHOTS=<folder> saves a screenshot of the window every 2 s,
-  // alternating between the top and the bottom of long pages.
+  // cycling between the top, middle and bottom of long pages.
   const shotsDir = app.isPackaged ? null : process.env.GUTCHECK_SHOTS;
   if (shotsDir) {
     fs.mkdirSync(shotsDir, { recursive: true });
@@ -297,7 +297,8 @@ function createWindow() {
     const timer = setInterval(async () => {
       if (win.isDestroyed()) return clearInterval(timer);
       try {
-        await win.webContents.executeJavaScript(`window.scrollTo(0, ${n % 2 ? 'document.body.scrollHeight' : 0})`);
+        const positions = ['0', '(document.body.scrollHeight - innerHeight) / 2', 'document.body.scrollHeight'];
+        await win.webContents.executeJavaScript(`window.scrollTo(0, ${positions[n % 3]})`);
         const img = await win.webContents.capturePage();
         fs.writeFileSync(path.join(shotsDir, `shot-${String(n++).padStart(3, '0')}.png`), img.toPNG());
       } catch {

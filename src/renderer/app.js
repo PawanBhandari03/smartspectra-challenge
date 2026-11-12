@@ -962,6 +962,9 @@ async function renderHistory() {
     await openSample();
     $('watchSample').click();
   } else if (auto.startsWith('screen:')) {
+    if (auto === 'screen:options' || auto === 'screen:consent') {
+      state.options = [{ label: 'A quiet afternoon at the beach', detail: '' }, { label: 'Giving a speech to 1,000 people', detail: 'no preparation' }];
+    }
     await go(auto.slice(7));
   } else if (auto) {
     state.options = [{ label: 'Stay in my city', detail: '' }, { label: 'Move for the new job', detail: 'higher salary' }];

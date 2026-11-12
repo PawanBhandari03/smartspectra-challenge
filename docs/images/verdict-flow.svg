@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#4b463f"/>
+    </marker>
+  </defs>
+  <rect width="960" height="600" rx="14" fill="#fbf8f2" stroke="#e2d9ca"/>
+  <text x="32" y="44" font-family="Georgia, 'Times New Roman', serif" font-size="24" fill="#1f1d1a">From raw readings to an honest verdict</text>
+  <text x="32" y="68" font-size="13" fill="#847b6f">src/core/analysis.js · pulse only · every rule below is covered by an automated test</text>
+
+  <!-- filter chain -->
+  <g font-size="12" fill="#4b463f">
+    <rect x="32" y="92" width="200" height="66" rx="8" fill="#ffffff" stroke="#cdbfaa"/>
+    <text x="44" y="114" font-weight="600" fill="#1f1d1a">1 · Reliable readings</text>
+    <text x="44" y="132">SDK "stable" flag and</text>
+    <text x="44" y="148">confidence ≥ 50 / 100</text>
+
+    <rect x="258" y="92" width="200" height="66" rx="8" fill="#ffffff" stroke="#cdbfaa"/>
+    <text x="270" y="114" font-weight="600" fill="#1f1d1a">2 · Spike filter</text>
+    <text x="270" y="132">skip 10 s after any</text>
+    <text x="270" y="148">low-confidence stretch</text>
+
+    <rect x="484" y="92" width="200" height="66" rx="8" fill="#ffffff" stroke="#cdbfaa"/>
+    <text x="496" y="114" font-weight="600" fill="#1f1d1a">3 · Plausibility gate</text>
+    <text x="496" y="132">drop jumps faster than</text>
+    <text x="496" y="148">max(8 bpm, 3.5 bpm/s)</text>
+
+    <rect x="710" y="92" width="218" height="66" rx="8" fill="#ffffff" stroke="#cdbfaa"/>
+    <text x="722" y="114" font-weight="600" fill="#1f1d1a">4 · Per-visit median</text>
+    <text x="722" y="132">of the scored window</text>
+    <text x="722" y="148">(last 25 s of each visit)</text>
+  </g>
+  <line x1="232" y1="125" x2="256" y2="125" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="458" y1="125" x2="482" y2="125" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="684" y1="125" x2="708" y2="125" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- decisions -->
+  <line x1="480" y1="158" x2="480" y2="190" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="290" y="192" width="380" height="52" rx="26" fill="#f1ebe0" stroke="#1f1d1a"/>
+  <text x="480" y="223" text-anchor="middle" font-size="13.5" fill="#1f1d1a">Every visit has ≥ 8 reliable readings?</text>
+  <line x1="670" y1="218" x2="746" y2="218" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="706" y="210" text-anchor="middle" font-size="11.5" fill="#847b6f">no</text>
+  <rect x="748" y="194" width="180" height="48" rx="8" fill="#ffffff" stroke="#847b6f"/>
+  <text x="838" y="216" text-anchor="middle" font-size="12.5" font-weight="600" fill="#4b463f">Not enough</text>
+  <text x="838" y="232" text-anchor="middle" font-size="12.5" font-weight="600" fill="#4b463f">clear signal</text>
+
+  <line x1="480" y1="244" x2="480" y2="270" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="492" y="262" font-size="11.5" fill="#847b6f">yes</text>
+
+  <rect x="230" y="272" width="500" height="66" rx="8" fill="#ffffff" stroke="#cdbfaa"/>
+  <text x="480" y="296" text-anchor="middle" font-size="13" fill="#1f1d1a">round 1 = A₁ − B₁ · round 2 = A₂ − B₂</text>
+  <text x="480" y="318" text-anchor="middle" font-size="13" fill="#4b463f">wobble = average of |A₁ − A₂| and |B₁ − B₂|  (same option, two visits)</text>
+
+  <line x1="480" y1="338" x2="480" y2="364" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="290" y="366" width="380" height="52" rx="26" fill="#f1ebe0" stroke="#1f1d1a"/>
+  <text x="480" y="397" text-anchor="middle" font-size="13.5" fill="#1f1d1a">Both rounds point the same way?</text>
+  <line x1="670" y1="392" x2="746" y2="392" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="706" y="384" text-anchor="middle" font-size="11.5" fill="#847b6f">no</text>
+
+  <line x1="480" y1="418" x2="480" y2="444" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="492" y="436" font-size="11.5" fill="#847b6f">yes</text>
+  <rect x="230" y="446" width="500" height="52" rx="26" fill="#f1ebe0" stroke="#1f1d1a"/>
+  <text x="480" y="477" text-anchor="middle" font-size="13.5" fill="#1f1d1a">Each round is bigger than max(wobble, 6 bpm)?</text>
+  <line x1="730" y1="472" x2="746" y2="472" stroke="#4b463f" stroke-width="1.5"/>
+  <line x1="746" y1="472" x2="746" y2="432" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="760" y="490" font-size="11.5" fill="#847b6f">no</text>
+
+  <rect x="748" y="368" width="180" height="62" rx="8" fill="#ffffff" stroke="#847b6f"/>
+  <text x="838" y="394" text-anchor="middle" font-size="12.5" font-weight="600" fill="#4b463f">"Your body didn't</text>
+  <text x="838" y="412" text-anchor="middle" font-size="12.5" font-weight="600" fill="#4b463f">pick a side"</text>
+
+  <line x1="480" y1="498" x2="480" y2="524" stroke="#4b463f" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="492" y="516" font-size="11.5" fill="#847b6f">yes</text>
+  <rect x="270" y="526" width="420" height="50" rx="8" fill="#e5ece5" stroke="#2f5d46" stroke-width="1.5"/>
+  <text x="480" y="548" text-anchor="middle" font-size="13.5" font-weight="600" fill="#1f1d1a">"Your body stayed calmer with &lt;lower-pulse option&gt;"</text>
+  <text x="480" y="566" text-anchor="middle" font-size="12" fill="#4b463f">plus: tension or excitement? the app asks, never decides</text>
+
+  <text x="32" y="566" font-size="11.5" fill="#847b6f">6 bpm floor: one-minute</text>
+  <text x="32" y="582" font-size="11.5" fill="#847b6f">blocks wobble 6–9 bpm by chance</text>
+</svg>

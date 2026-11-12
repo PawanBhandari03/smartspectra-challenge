@@ -1,4 +1,4 @@
-# Gut Check — Project Overview
+# CrossRoads — Development log
 
 > **Your body votes on your decisions.**
 > A desktop app that watches how your body reacts (through your laptop webcam) while you imagine living each of your options, and shows you which one your body relaxed into and which one made it tense.
