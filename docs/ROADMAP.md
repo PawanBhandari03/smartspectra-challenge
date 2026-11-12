@@ -83,7 +83,7 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] App renamed to **CrossRoads** (a decision moment)
 - [x] README.md + docs/ (ARCHITECTURE, VALIDATION, SDK-NOTES, PRIVACY, MANUAL-TESTS) with diagrams and screenshots
 - [x] `npm run analyze` so judges can check the sample's numbers
-- [ ] 👤 Decide whether the real decision ("move to Bangalore") may appear in the public docs
+- [x] 👤 Real decision ("move to Bangalore") may appear in the public docs: approved by Pawan (Nov 12)
 - [ ] Rebuild installer as CrossRoads 1.0.0; 👤 uninstall "Gut Check", install CrossRoads, re-enter the key, open the sample
 - [ ] 👤 Publish GitHub Release v1.0.0: upload only `CrossRoads-Setup-1.0.0.exe` and `CrossRoads-Portable-1.0.0.exe` (not `latest.yml` or `.blockmap`)
 - [ ] 👤 Make the GitHub repo **public** (rules require it; it is private now)
