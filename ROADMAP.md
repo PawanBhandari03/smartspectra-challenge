@@ -68,6 +68,8 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Windows installer + portable exe (`npm run dist` → `release/`), checked: no key, no personal data inside, SDK loads
 - [ ] 👤 Install it and run one 30 s live test with the key added in Settings
 - [ ] 👤 Publish GitHub Release v1.0 (after the README is written)
+- [ ] 👤 Make the GitHub repo **public** before submitting (the rules require a public repo; it is private now)
+- Validation sessions are backed up outside the repo in `Dev/Projects/gutcheck-backup-2026-11-12` (test "Delete" only in the installed copy)
 - [ ] Error handling: bad lighting, face lost, low frame rate
 - [ ] App name + icon finalised 👤
 
