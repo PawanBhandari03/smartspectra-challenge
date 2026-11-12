@@ -1,12 +1,13 @@
 {
   "name": "gut-check",
   "version": "0.1.0",
-  "description": "Your body votes on your decisions. A webcam-based desktop app built with the Presage SmartSpectra SDK.",
+  "description": "Your body votes on your decisions. A decision-reflection journal that reads pulse, blinks and expressions from your webcam with the Presage SmartSpectra SDK.",
   "main": "src/main/main.js",
   "scripts": {
     "build": "node scripts/build.js",
     "start": "node scripts/build.js && node scripts/start.js",
-    "test": "node --test \"tests/*.test.js\""
+    "test": "node --test \"tests/*.test.js\"",
+    "dist": "node scripts/build.js && electron-builder --win"
   },
   "author": "Pawan Bhandari",
   "license": "MIT",
@@ -18,7 +19,62 @@
   },
   "devDependencies": {
     "electron": "^45.3.0",
+    "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
     "sharp": "^0.35.5"
+  },
+  "homepage": "https://github.com/PawanBhandari03/smartspectra-challenge",
+  "build": {
+    "appId": "com.pawanbhandari.gutcheck",
+    "productName": "Gut Check",
+    "copyright": "Copyright (c) 2026 Pawan Bhandari",
+    "directories": {
+      "output": "release"
+    },
+    "asar": false,
+    "files": [
+      "package.json",
+      "src/**/*",
+      "dist/**/*",
+      "assets/**/*",
+      "samples/**/*",
+      "!**/*.map",
+      "!node_modules/@smartspectra/node-sdk-darwin-arm64/**",
+      "!node_modules/@smartspectra/node-sdk-linux-x64/**",
+      "!node_modules/@smartspectra/node-sdk-linux-arm64/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "GutCheck-Setup-${version}.exe",
+      "shortcutName": "Gut Check"
+    },
+    "portable": {
+      "artifactName": "GutCheck-Portable-${version}.exe"
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false
+    },
+    "npmRebuild": false
   }
 }
