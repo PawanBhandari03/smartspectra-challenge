@@ -29,30 +29,59 @@
 
   <!-- 1. Welcome -->
   <section id="screen-welcome" class="screen active">
-    <div class="center hero">
-      <p class="eyebrow">For the decisions you keep going back and forth on</p>
-      <h1>Your body votes<br>on <em>your</em> decisions.</h1>
-      <svg class="hand-line" viewBox="0 0 420 64" aria-hidden="true">
-        <!-- a heartbeat that reaches a crossroads and splits into the two options -->
-        <path d="M2 32h104l9-15 10 30 9-24 6 9h30" fill="none" stroke="#2f5d46" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M176 32c36 0 46-20 96-20h130" fill="none" stroke="#2f62a8" stroke-width="2.2" stroke-linecap="round"/>
-        <path d="M176 32c36 0 46 20 96 20h130" fill="none" stroke="#c8612e" stroke-width="2.2" stroke-linecap="round"/>
-        <circle cx="408" cy="12" r="4" fill="#2f62a8"/>
-        <circle cx="408" cy="52" r="4" fill="#c8612e"/>
-        <circle cx="176" cy="32" r="3.5" fill="#1f1d1a"/>
-      </svg>
-      <p class="lead">Picture living each of your two options while your camera quietly reads your pulse, blinks and
-        expressions. Afterwards, see where your body reacted, moment by moment, and what that might mean.</p>
-      <ol class="steps">
-        <li><span class="step-num">i.</span><div><b>Name two options</b><span>the choices you're torn between</span></div></li>
-        <li><span class="step-num">ii.</span><div><b>Imagine each, twice</b><span>short guided scenes, about four minutes</span></div></li>
-        <li><span class="step-num">iii.</span><div><b>Read your mirror</b><span>what your body did, honestly reported</span></div></li>
-      </ol>
-      <div class="hero-actions">
-        <button id="welcomeNext" class="primary big">Begin a check <span aria-hidden="true">→</span></button>
-        <button id="trySample" class="big secondary">Try the sample <span class="muted">· no camera needed</span></button>
+    <div class="center landing">
+      <div class="landing-grid">
+        <figure class="plate" aria-label="Figure: the bundled sample session drawn as a crossroads">
+          <p class="plate-head"><span>Fig. 1</span><span>Sample session · real numbers</span></p>
+          <svg class="plate-art" viewBox="0 0 520 336" aria-hidden="true">
+            <!-- faint journal rules -->
+            <g class="plate-rules"><path d="M0 60H520M0 120H520M0 180H520M0 240H520M0 300H520"/></g>
+            <!-- your pulse reaches the crossroads -->
+            <path class="p-stem" pathLength="1" d="M8 170h92l10-24 12 52 11-44 8 16h69"/>
+            <circle class="p-fork" cx="210" cy="170" r="5"/>
+            <!-- option A: calmer, drawn heavier -->
+            <path class="p-a" pathLength="1" d="M210 170c48 0 62-86 128-86h120"/>
+            <circle class="p-dot-a" cx="462" cy="84" r="7"/>
+            <!-- option B -->
+            <path class="p-b" pathLength="1" d="M210 170c48 0 62 86 128 86h120"/>
+            <circle class="p-dot-b" cx="462" cy="256" r="6"/>
+            <g class="p-labels">
+              <text x="338" y="56" class="p-name">A quiet afternoon</text>
+              <text x="338" y="128" class="p-num">72 <tspan>bpm · calmer</tspan></text>
+              <text x="338" y="228" class="p-name">Giving a speech</text>
+              <text x="338" y="300" class="p-num">81 <tspan>bpm</tspan></text>
+              <text x="12" y="140" class="p-note">your pulse</text>
+              <text x="186" y="206" class="p-note">the choice</text>
+            </g>
+          </svg>
+          <figcaption>Two options, each imagined twice. In both rounds the developer's pulse stayed lower with the beach,
+            so the beach path is drawn heavier. Many checks end with no clear side, and CrossRoads says so.</figcaption>
+        </figure>
+
+        <div class="landing-copy">
+          <p class="eyebrow">For the decisions you keep going back and forth on</p>
+          <h1>Your body votes on <em>your</em> decisions.</h1>
+          <p class="lead">What are you torn between? Picture living each option while your camera quietly reads your
+            pulse, breathing and blinks. Then see where your body reacted, moment by moment.</p>
+          <div class="hero-actions">
+            <button id="welcomeNext" class="primary big">Begin a check <span aria-hidden="true">→</span></button>
+            <button id="trySample" class="big secondary">Try the sample <span class="muted">· no camera needed</span></button>
+          </div>
+          <p class="fine">A reflection tool for general wellness, not medical advice. Video never leaves your computer.</p>
+        </div>
       </div>
-      <p class="fine">A reflection tool for general wellness, not medical advice. Video never leaves your computer.</p>
+
+      <button id="revisit" class="revisit hidden" type="button">
+        <span class="revisit-kicker">From your decisions</span>
+        <span id="revisitText" class="revisit-text"></span>
+        <span class="revisit-go">What did you decide? →</span>
+      </button>
+
+      <ol class="steps">
+        <li><span class="step-num">i.</span><div><b>Name two options</b><span>The choices you're torn between, in your own words.</span></div></li>
+        <li><span class="step-num">ii.</span><div><b>Imagine each, twice</b><span>Short guided scenes in a mirrored order, about four minutes.</span></div></li>
+        <li><span class="step-num">iii.</span><div><b>Read your mirror</b><span>What your body did, honestly reported, including "no clear side".</span></div></li>
+      </ol>
     </div>
   </section>
 
