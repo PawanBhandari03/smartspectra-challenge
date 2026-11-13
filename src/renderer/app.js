@@ -1,6 +1,6 @@
 const { SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
-const { buildPlan, plannedDurationMs, SessionRunner } = require('../core/session');
+const { buildPlan, SessionRunner } = require('../core/session');
 const { analyzeSession, pulseTrace, MIN_CONFIDENCE, MIN_ROUND_GAP_BPM, MOMENT } = require('../core/analysis');
 const { renderTimeline, OPTION_COLORS } = require('./timeline');
 const { VitalsTracker } = require('../core/vitals');
@@ -301,9 +301,6 @@ function closeCamera() {
 }
 
 async function enterSetup() {
-  const plan = buildPlan(state.options);
-  const minutes = plannedDurationMs(plan) / 60000;
-  $('liveCost').textContent = `about ${Math.ceil(minutes)} minutes · uses ~${Math.ceil((minutes * 60) / 30)} Presage credits`;
   $('setupError').classList.add('hidden');
   await refreshCameras();
   await openCamera();

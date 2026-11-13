@@ -305,7 +305,17 @@ code { font: 12.5px Consolas, 'Cascadia Mono', monospace; background: var(--shee
 
 /* ---------- Setup ---------- */
 
-.setup-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; margin-top: 20px; }
+.setup-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; margin-top: 16px; align-items: start; }
+#screen-setup.active { padding-top: 28px; padding-bottom: 28px; }
+.setup-guide { display: flex; flex-direction: column; background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--accent); border-radius: 8px; padding: 20px 24px 22px; }
+.setup-guide h3 { margin-bottom: 6px; }
+.setup-intro { color: var(--ink-2); font-family: var(--serif); font-size: 16.5px; line-height: 1.45; margin: 0 0 10px; }
+.guide-list { list-style: none; padding: 0; margin: 0 0 18px; border-top: 1px solid var(--rule); }
+.guide-list li { display: flex; gap: 14px; align-items: baseline; padding: 7px 0; font-size: 14.5px; border-bottom: 1px solid var(--rule); color: var(--ink-2); line-height: 1.5; }
+.guide-list b { color: var(--ink); }
+.guide-num { font-family: var(--serif); font-style: italic; color: var(--accent); font-size: 18px; min-width: 14px; }
+.setup-guide .actions { margin-top: 0; }
+.setup-guide #beginSession { padding: 13px 26px; font-size: 15.5px; }
 
 .video-wrap, .live-video { position: relative; aspect-ratio: 16 / 9; background: #23201c; border-radius: 6px; overflow: hidden; }
 .video-wrap { margin-bottom: 10px; }
@@ -317,12 +327,7 @@ code { font: 12.5px Consolas, 'Cascadia Mono', monospace; background: var(--shee
 .fps-info.good { color: var(--accent); }
 .fps-info.bad { color: var(--warn); }
 
-.tips { padding-left: 18px; margin: 0 0 22px; color: var(--ink-2); }
-.tips li { margin-bottom: 6px; }
-.tips b { color: var(--ink); font-weight: 600; }
 
-.session-cost { color: var(--ink-2); margin: 0; }
-.session-cost span { color: var(--muted); }
 .radio { display: flex; gap: 10px; align-items: flex-start; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; cursor: pointer; }
 .radio small { color: var(--muted); }
 .radio:has(input:checked) { border-color: var(--ink); }

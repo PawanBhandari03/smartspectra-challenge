@@ -126,18 +126,19 @@
           </div>
           <p id="fpsInfo" class="fps-info"></p>
         </div>
-        <div>
-          <ul class="tips">
-            <li>Light on your face <b>from the front</b>, nothing bright behind you</li>
-            <li>Face inside the oval, <b>upper chest visible</b></li>
-            <li>Camera <b>completely still</b> (on a stand or the desk)</li>
-            <li><b>Sit back</b> with your back supported; it takes about 4 minutes</li>
-            <li>Read the prompts <b>silently</b>; stay still while you imagine</li>
-          </ul>
-          <p class="session-cost"><b>Live measurement</b> · <span id="liveCost"></span></p>
+        <div class="setup-guide">
+          <h3>Set yourself up</h3>
+          <p class="setup-intro">The camera reads tiny colour changes in your face, so a clear, steady picture matters more than anything else.</p>
+          <ol class="guide-list">
+            <li><span class="guide-num">1</span><div><b>Light from the front.</b> Face a window or a lamp. Nothing bright behind you.</div></li>
+            <li><span class="guide-num">2</span><div><b>Face inside the oval.</b> Keep your upper chest in view too; that's where breathing is read.</div></li>
+            <li><span class="guide-num">3</span><div><b>Keep the camera still.</b> On a stand or the desk, not in your hand.</div></li>
+            <li><span class="guide-num">4</span><div><b>Sit back and settle in.</b> Lean on your chair; the check takes about four minutes.</div></li>
+            <li><span class="guide-num">5</span><div><b>Read the prompts silently.</b> Just imagine each scene; talking moves your face.</div></li>
+          </ol>
           <p id="setupError" class="error hidden"></p>
           <div class="actions">
-            <button id="beginSession" class="primary">Begin session</button>
+            <button id="beginSession" class="primary">Begin session <span aria-hidden="true">→</span></button>
           </div>
         </div>
       </div>
