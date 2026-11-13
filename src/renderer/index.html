@@ -310,11 +310,19 @@
           <p>When you've made the decision, come back and record it here. It's saved with this check on this computer and
             shown in My decisions, where CrossRoads counts how often your choice matched the option your body was calmer with.</p>
         </div>
-        <div class="card choice-body">
+        <div id="choiceRecord" class="decision-record hidden">
+          <p class="dr-kicker">You decided<span id="drDate"></span></p>
+          <p id="drChoice" class="dr-choice"></p>
+          <p id="drCompare" class="dr-compare"></p>
+          <blockquote id="drNote" class="dr-note hidden"></blockquote>
+          <button id="drEdit" class="ghost small dr-edit" type="button">Change my answer</button>
+        </div>
+        <div id="choiceForm" class="card choice-body">
           <div id="choiceButtons" class="row"></div>
           <textarea id="choiceNote" rows="2" maxlength="500" placeholder="Optional: how do you feel about it now?"></textarea>
           <div class="row">
             <button id="saveChoice" class="primary">Save my decision</button>
+            <button id="cancelChoice" class="ghost hidden" type="button">Cancel</button>
             <span id="choiceSaved" class="choice-saved"></span>
           </div>
         </div>

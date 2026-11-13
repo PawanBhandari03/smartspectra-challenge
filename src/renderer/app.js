@@ -792,32 +792,63 @@ function renderChoice(result, sessionName) {
   const show = !!sessionName && !result.demo && !result.sample;
   card.classList.toggle('hidden', !show);
   if (!show) return;
-  let selected = result.choice ? result.choice.optionIndex : undefined;
-  const buttons = $('choiceButtons');
-  buttons.innerHTML = '';
-  const choices = [...result.options.map((o, i) => ({ label: o.label, value: i })), { label: 'Still deciding', value: null }];
-  for (const c of choices) {
-    const b = document.createElement('button');
-    b.className = `choice-btn${selected === c.value ? ' selected' : ''}`;
-    b.textContent = c.label;
-    b.onclick = () => {
-      selected = c.value;
-      buttons.querySelectorAll('.choice-btn').forEach((x) => x.classList.toggle('selected', x === b));
-    };
-    buttons.appendChild(b);
-  }
-  $('choiceNote').value = result.choice?.note || '';
   const verdict = analyzeSession(result).verdict;
-  const savedText = () => `Saved ${new Date(result.choice.at).toLocaleDateString()}: you chose ${choiceLabel(result)}. ${choiceComparison(result, verdict)}`;
-  $('choiceSaved').textContent = result.choice ? savedText() : '';
+  let selected;
+
+  // A saved decision reads as a record; the form only shows to record or change it.
+  const showRecord = () => {
+    const c = result.choice;
+    $('choiceRecord').classList.remove('hidden');
+    $('choiceForm').classList.add('hidden');
+    $('drDate').textContent = c.at ? ` · ${new Date(c.at).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })}` : '';
+    const choice = $('drChoice');
+    choice.replaceChildren();
+    if (c.optionIndex == null) {
+      choice.textContent = 'Still deciding';
+      choice.classList.add('pending');
+    } else {
+      choice.classList.remove('pending');
+      choice.append(swatch(OPTION_COLORS[c.optionIndex]), document.createTextNode(result.options[c.optionIndex].label));
+    }
+    $('drCompare').textContent = choiceComparison(result, verdict);
+    $('drNote').textContent = c.note ? `“${c.note}”` : '';
+    $('drNote').classList.toggle('hidden', !c.note);
+  };
+
+  const showForm = () => {
+    selected = result.choice ? result.choice.optionIndex : undefined;
+    $('choiceRecord').classList.add('hidden');
+    $('choiceForm').classList.remove('hidden');
+    $('cancelChoice').classList.toggle('hidden', !result.choice);
+    const buttons = $('choiceButtons');
+    buttons.innerHTML = '';
+    const choices = [...result.options.map((o, i) => ({ label: o.label, value: i })), { label: 'Still deciding', value: null }];
+    for (const c of choices) {
+      const b = document.createElement('button');
+      b.className = `choice-btn${selected === c.value ? ' selected' : ''}`;
+      b.textContent = c.label;
+      b.onclick = () => {
+        selected = c.value;
+        buttons.querySelectorAll('.choice-btn').forEach((x) => x.classList.toggle('selected', x === b));
+      };
+      buttons.appendChild(b);
+    }
+    $('choiceNote').value = result.choice?.note || '';
+    $('choiceSaved').textContent = '';
+  };
+
   $('saveChoice').onclick = async () => {
     if (selected === undefined) {
       $('choiceSaved').textContent = 'Pick one of the options first.';
       return;
     }
     result.choice = await window.gutCheck.setChoice(sessionName, { optionIndex: selected, note: $('choiceNote').value });
-    $('choiceSaved').textContent = savedText();
+    showRecord();
   };
+  $('cancelChoice').onclick = showRecord;
+  $('drEdit').onclick = showForm;
+
+  if (result.choice) showRecord(); else showForm();
 }
 
 function renderResults(result, sessionName, recordingName, { sample = false } = {}) {
@@ -1237,15 +1268,29 @@ async function renderHistory() {
       label.textContent = o.label;
       line.append(swatch(OPTION_COLORS[i]), label);
       if (calmer === i) line.appendChild(div('h-tag', 'calmer'));
-      if (session.choice && session.choice.optionIndex === i) line.appendChild(div('h-tag chosen', 'your choice'));
       body.appendChild(line);
     });
     const foot = div('h-foot');
     foot.appendChild(div('h-verdict', verdictText(a.verdict).title));
-    if (session.choice && session.choice.optionIndex == null) foot.appendChild(div('h-chose', 'Still deciding'));
     if (session.demo) foot.appendChild(div('chip', 'Demo'));
     if ((session.version || 1) < 2) foot.appendChild(div('chip', 'Early format'));
     body.appendChild(foot);
+    if (session.choice) {
+      // What you decided, written out as its own line.
+      const c = session.choice;
+      const line = div('h-decided');
+      line.appendChild(div('h-decided-k', 'You decided'));
+      const what = div('h-decided-v');
+      if (c.optionIndex == null) what.textContent = 'still deciding';
+      else what.append(swatch(OPTION_COLORS[c.optionIndex]), document.createTextNode(session.options[c.optionIndex].label));
+      line.appendChild(what);
+      if (c.optionIndex != null) {
+        const rel = a.verdict.kind !== 'lean' ? 'your own call'
+          : c.optionIndex === a.verdict.calmerIndex ? 'the option your body was calmer with' : 'not the option your body was calmer with';
+        line.appendChild(div('h-decided-n', rel));
+      }
+      body.appendChild(line);
+    }
 
     // Right: delete, always visible.
     const actions = div('h-actions');
