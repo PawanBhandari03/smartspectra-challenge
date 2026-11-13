@@ -134,13 +134,14 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 1
 
 .landing { max-width: 1240px; }
 .landing-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 64px; align-items: center; }
-.landing h1 { font-size: 72px; line-height: 1.02; margin-bottom: 22px; }
-.landing .lead { font-size: 21.5px; line-height: 1.55; margin-bottom: 34px; }
+.landing h1 { font-size: 70px; line-height: 1.02; margin-bottom: 20px; }
+#screen-welcome.active { padding-top: 22px; padding-bottom: 22px; }
+.landing .lead { font-size: 21.5px; line-height: 1.55; margin-bottom: 30px; }
 .landing .hero-actions button.big { font-size: 16.5px; padding: 16px 28px; }
 .landing .fine { font-size: 14px; }
 
 /* Fig. 1: the sample session as a crossroads, styled like a plate in a journal. */
-.plate { margin: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 22px 26px 20px; }
+.plate { margin: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 26px 16px; }
 .plate-head { display: flex; justify-content: space-between; margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--rule);
   font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .plate-head span:first-child { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 16px; color: var(--ink-2); }
@@ -162,16 +163,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 1
 .plate figcaption { font-family: var(--serif); font-style: italic; color: var(--ink-2); font-size: 15.5px; line-height: 1.5;
   margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--rule); }
 
-/* "On this day" style reminder of an open decision. */
-.revisit { display: flex; align-items: baseline; gap: 18px; width: 100%; margin: 44px 0 0; padding: 16px 22px; text-align: left;
-  background: var(--accent-soft); border: 1px solid #cbd8cc; border-radius: 8px; }
-.revisit:hover:not(:disabled) { border-color: var(--accent); }
-.revisit-kicker { font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
-.revisit-text { flex: 1; font-family: var(--serif); font-size: 19px; color: var(--ink); }
-.revisit-go { color: var(--accent); font-weight: 600; white-space: nowrap; }
 
-.landing .steps { margin: 44px 0 0; }
+.landing .steps-label { margin: 26px 0 8px; }
+.landing .steps { margin: 0; }
 .landing .steps b { font-size: 21px; }
+.landing .steps li { padding-top: 12px; padding-bottom: 12px; }
 .landing .steps span:not(.step-num) { font-size: 15.5px; line-height: 1.5; display: block; margin-top: 4px; }
 .landing .step-num { font-size: 21px; }
 

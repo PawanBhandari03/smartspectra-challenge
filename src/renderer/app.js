@@ -58,7 +58,6 @@ function go(name) {
   if (name === 'options') renderOptions();
   if (name === 'history') return renderHistory();
   if (name === 'settings') return renderSettings();
-  if (name === 'welcome') renderRevisit();
   return Promise.resolve();
 }
 
@@ -144,29 +143,6 @@ function renderOptions() {
 
 $('welcomeNext').onclick = () => go('options');
 
-// Welcome reminder (like a journal's "on this day"): the newest real decision with no answer yet.
-async function renderRevisit() {
-  const card = $('revisit');
-  card.classList.add('hidden');
-  let names = [];
-  try { names = await window.gutCheck.listSessions(); } catch { return; }
-  for (const name of names.slice(0, 10)) {
-    let session;
-    try { session = JSON.parse(await window.gutCheck.readSession(name)); } catch { continue; }
-    if (!session.options || session.options.length < 2 || session.choice || session.demo || !session.completed) continue;
-    const when = new Date(session.createdAt || Date.now());
-    const days = Math.round((Date.now() - when.getTime()) / 86400000);
-    const ago = days <= 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`;
-    $('revisitText').textContent = `${ago} you were torn between “${session.options[0].label}” and “${session.options[1].label}”.`;
-    card.onclick = async () => {
-      renderResults(session, name, null);
-      await go('results');
-      $('choiceCard').scrollIntoView({ block: 'center' });
-    };
-    card.classList.remove('hidden');
-    return;
-  }
-}
 
 $('optionsNext').onclick = () => {
   const cleaned = state.options.map((o) => ({ label: o.label.trim(), detail: o.detail.trim() }));
@@ -1024,7 +1000,6 @@ async function renderHistory() {
   const showToday = () => { $('todayDate').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }); };
   showToday();
   setInterval(showToday, 60000);
-  renderRevisit();
   state.info = await bridge.info();
   const auto = await window.gutCheck.getAutoReplay();
   // Dev/testing hooks: "screen:<name>" opens a screen; a recording name runs a full demo session.
