@@ -237,48 +237,78 @@
         </div>
         <button id="watchSample" class="secondary">▶ Watch the replay</button>
       </div>
-      <p id="resultsDate" class="letterhead"></p>
-      <svg id="reveal" class="reveal" viewBox="0 0 640 84" role="img"></svg>
-      <h2 id="resultsTitle" class="results-title"></h2>
-      <p id="resultsNote" class="lead"></p>
 
-      <div id="optionSummary" class="option-summary"></div>
+      <div class="result-hero">
+        <div class="result-copy">
+          <p class="eyebrow">Your mirror</p>
+          <h2 id="resultsTitle" class="results-title"></h2>
+          <p id="resultsNote" class="lead"></p>
+        </div>
+        <figure class="reveal-card">
+          <svg id="reveal" class="reveal" viewBox="0 0 330 200" role="img"></svg>
+          <div id="revealLabels" class="reveal-labels"></div>
+        </figure>
+      </div>
 
-      <div class="card">
-        <div class="card-head">
+      <section class="r-section">
+        <div class="r-head">
+          <h3>By the numbers</h3>
+          <p>Each option was imagined twice, in a mirrored order (A B B A), so each one appears in two rows below.</p>
+        </div>
+        <div id="optionSummary" class="option-summary"></div>
+        <div class="card table-card"><div id="resultsTable"></div></div>
+      </section>
+
+      <section class="r-section">
+        <div class="r-head">
           <h3>Your pulse through the session</h3>
           <div id="chartLegend" class="legend"></div>
         </div>
-        <div id="timeline" class="timeline"></div>
-        <p class="fine">Hover the line to see what was on screen at that moment. Numbers mark the moments below.</p>
-      </div>
-
-      <div class="two-col">
         <div class="card">
-          <h3>Moments your body reacted</h3>
-          <ol id="momentsList" class="moments"></ol>
+          <div id="timeline" class="timeline"></div>
+          <div class="chart-key">
+            <span><i class="key-line"></i>Pulse (reliable readings)</span>
+            <span><i class="key-gap"></i>Lower-confidence readings (not counted)</span>
+            <span><i class="key-median"></i>Visit average (what counts)</span>
+            <span><i class="key-dot"></i>Moments below</span>
+            <span class="key-hint">Hover the line to see what was on screen.</span>
+          </div>
         </div>
-        <div class="card">
-          <h3>Questions to sit with</h3>
-          <ul id="reflectList" class="reflect"></ul>
-        </div>
-      </div>
+      </section>
 
-      <div id="choiceCard" class="card choice hidden">
-        <h3>What did you decide?</h3>
-        <p class="muted">Come back once you've made the decision. Over time your decisions list shows whether your choice matched what your body did.</p>
-        <div id="choiceButtons" class="row"></div>
-        <textarea id="choiceNote" rows="2" maxlength="500" placeholder="Optional: how do you feel about it now?"></textarea>
-        <div class="row">
-          <button id="saveChoice" class="primary">Save</button>
-          <span id="choiceSaved" class="muted"></span>
+      <section class="r-section">
+        <div class="r-head"><h3>What stood out</h3></div>
+        <div class="two-col">
+          <div class="card">
+            <h4 class="card-title">Moments your body reacted</h4>
+            <ol id="momentsList" class="moments"></ol>
+          </div>
+          <div class="card">
+            <h4 class="card-title">Questions to sit with</h4>
+            <ul id="reflectList" class="reflect"></ul>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <section id="choiceCard" class="r-section choice hidden">
+        <div class="r-head">
+          <h3>What did you decide?</h3>
+          <p>When you've made the decision, come back and record it here. It's saved with this check on this computer and
+            shown in My decisions, where CrossRoads counts how often your choice matched the option your body was calmer with.</p>
+        </div>
+        <div class="card choice-body">
+          <div id="choiceButtons" class="row"></div>
+          <textarea id="choiceNote" rows="2" maxlength="500" placeholder="Optional: how do you feel about it now?"></textarea>
+          <div class="row">
+            <button id="saveChoice" class="primary">Save my decision</button>
+            <span id="choiceSaved" class="choice-saved"></span>
+          </div>
+        </div>
+      </section>
 
       <details class="card details">
-        <summary>Details and method</summary>
-        <div id="resultsTable"></div>
-        <p id="method" class="fine"></p>
+        <summary>How this works</summary>
+        <p id="method" class="method"></p>
         <p id="resultsFiles" class="fine"></p>
       </details>
 
@@ -295,6 +325,7 @@
       <p class="eyebrow">My decisions<span id="historyCount"></span></p>
       <h2>Your past decisions</h2>
       <p class="lead">Every decision you've checked, newest first. Open one to read its mirror again. Everything stays on this computer.</p>
+      <p id="historySummary" class="history-summary"></p>
       <div id="historyList" class="history-list"></div>
     </div>
   </section>

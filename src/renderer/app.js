@@ -1,7 +1,7 @@
 const { SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { buildPlan, SessionRunner } = require('../core/session');
-const { analyzeSession, pulseTrace, MIN_CONFIDENCE, MIN_ROUND_GAP_BPM, MOMENT } = require('../core/analysis');
+const { analyzeSession, pulseTrace, MIN_CONFIDENCE, MIN_ROUND_GAP_BPM, MOMENT, LAGS } = require('../core/analysis');
 const { renderTimeline, OPTION_COLORS } = require('./timeline');
 const { VitalsTracker } = require('../core/vitals');
 const { REQUESTED_METRICS } = require('../core/metrics');
@@ -641,6 +641,7 @@ $('watchSample').onclick = async () => {
 // ---------- Results: "a mirror, not a verdict" ----------
 
 const fmt = (v, digits = 0) => (v == null ? '—' : v.toFixed(digits));
+const unitText = (v, unit, digits = 0) => (v == null ? '—' : `${v.toFixed(digits)} ${unit}`);
 
 function cell(row, content, cls = '') {
   const td = document.createElement('td');
@@ -674,6 +675,23 @@ function verdictText(v) {
   }
 }
 
+function clockText(ms) {
+  const s = Math.max(0, Math.round(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// How a recorded decision compares with what the body did. Only a clear lean can "match"; every other
+// result is reported as the person's own call, never as right or wrong.
+function choiceComparison(session, verdict) {
+  const c = session.choice;
+  if (!c) return '';
+  if (c.optionIndex == null) return 'Still deciding. Come back when you have.';
+  if (verdict.kind !== 'lean') return 'Your body didn\'t pick a side here, so this one was all you.';
+  return c.optionIndex === verdict.calmerIndex
+    ? 'This matches the option your body was calmer with.'
+    : 'Your body was calmer with the other option. A higher pulse can mean excitement as well as tension.';
+}
+
 function choiceLabel(session) {
   const c = session.choice;
   if (!c) return '';
@@ -701,14 +719,16 @@ function renderChoice(result, sessionName) {
     buttons.appendChild(b);
   }
   $('choiceNote').value = result.choice?.note || '';
-  $('choiceSaved').textContent = result.choice ? `Saved ${new Date(result.choice.at).toLocaleDateString()}: you chose ${choiceLabel(result)}.` : '';
+  const verdict = analyzeSession(result).verdict;
+  const savedText = () => `Saved ${new Date(result.choice.at).toLocaleDateString()}: you chose ${choiceLabel(result)}. ${choiceComparison(result, verdict)}`;
+  $('choiceSaved').textContent = result.choice ? savedText() : '';
   $('saveChoice').onclick = async () => {
     if (selected === undefined) {
       $('choiceSaved').textContent = 'Pick one of the options first.';
       return;
     }
     result.choice = await window.gutCheck.setChoice(sessionName, { optionIndex: selected, note: $('choiceNote').value });
-    $('choiceSaved').textContent = `Saved: you chose ${choiceLabel(result)}.`;
+    $('choiceSaved').textContent = savedText();
   };
 }
 
@@ -720,24 +740,24 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
     + a.visits.map((v) => `${v.label}#${v.visit} pulse ${fmt(v.stats.pulse, 1)} (n${v.stats.pulseReadings})`).join(' · ')
     + ` · saved ${sessionName}`);
 
-  const when = new Date(result.createdAt || Date.now())
-    .toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  $('resultsDate').textContent = `${when} · “${result.options[0].label}” or “${result.options[1].label}”?`;
-
   const text = verdictText(a.verdict);
   renderReveal(a, result.options);
   $('resultsTitle').textContent = text.title;
   $('resultsNote').textContent = text.note;
 
   renderOptionSummary(a);
-  renderMoments(a);
+  const sessionStart = result.phases.find((p) => p.kind === 'baseline')?.startMs ?? 0;
+  renderMoments(a, sessionStart);
   renderReflection(a, result.options);
   renderLegend(result.options);
   // Draw after the screen is visible so the chart can measure its width.
-  redrawTimeline = () => renderTimeline($('timeline'), result, pulseTrace(result), momentMarkers(a));
+  const visitMedians = a.visits.map((v, i) => ({ ...v, phase: result.phases.filter((p) => p.kind === 'option')[i] }))
+    .filter((v) => v.stats.pulse != null && v.stats.enoughSignal && v.phase)
+    .map((v) => ({ startMs: v.phase.startMs + LAGS.pulseSkipMs, endMs: v.phase.endMs, v: v.stats.pulse, optionIndex: v.optionIndex }));
+  redrawTimeline = () => renderTimeline($('timeline'), result, pulseTrace(result), momentMarkers(a), visitMedians);
   requestAnimationFrame(redrawTimeline);
 
-  $('method').textContent = 'How this works: Presage SmartSpectra reads your pulse from tiny colour changes in your face through the camera. '
+  $('method').textContent = 'Presage SmartSpectra reads your pulse from tiny colour changes in your face through the camera. '
     + 'Each option is visited twice in a mirrored order (A B B A), so the slow drift of a body during a session affects both options equally. '
     + `Only stable readings with confidence ${MIN_CONFIDENCE}+ count, skipping the first 15 s of each visit while the pulse average catches up. `
     + `A resting pulse wobbles 6 to 9 bpm from minute to minute by itself, so CrossRoads only names a calmer option when both rounds agree by more than ${MIN_ROUND_GAP_BPM} bpm. `
@@ -747,7 +767,7 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
   const table = document.createElement('table');
   table.className = 'results';
   const head = table.createTHead().insertRow();
-  for (const h of ['Visit', 'Option', 'Pulse', 'Breathing', 'Blinks', 'Signal']) {
+  for (const h of ['', 'Option', 'Pulse', 'Breathing', 'Blinks', 'Signal']) {
     const th = document.createElement('th');
     th.textContent = h;
     head.appendChild(th);
@@ -755,20 +775,23 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
   const body = table.createTBody();
   if (a.baseline) {
     const row = body.insertRow();
-    cell(row, 'Baseline');
-    cell(row, 'Calm scene', 'muted');
-    cell(row, `${fmt(a.baseline.pulse)} bpm`, 'num');
-    cell(row, `${fmt(a.baseline.breathing, 1)} /min`, 'num');
-    cell(row, `${fmt(a.baseline.blinksPerMin)} /min`, 'num');
+    cell(row, 'Baseline', 'muted');
+    cell(row, 'Calm scene (not compared)', 'muted');
+    cell(row, unitText(a.baseline.pulse, 'bpm'), 'num');
+    cell(row, unitText(a.baseline.breathing, '/min', 1), 'num');
+    cell(row, unitText(a.baseline.blinksPerMin, '/min'), 'num');
     cell(row, a.baseline.enoughSignal ? 'good' : 'weak', a.baseline.enoughSignal ? '' : 'up');
   }
   a.visits.forEach((v, i) => {
     const row = body.insertRow();
-    cell(row, `${i + 1}`);
-    cell(row, v.label);
-    cell(row, `${fmt(v.stats.pulse)} bpm`, 'num');
-    cell(row, `${fmt(v.stats.breathing, 1)} /min`, 'num');
-    cell(row, `${fmt(v.stats.blinksPerMin)} /min`, 'num');
+    cell(row, `Round ${v.visit} · ${i + 1} of ${a.visits.length}`, 'muted');
+    const opt = document.createElement('td');
+    opt.append(swatch(OPTION_COLORS[v.optionIndex]), document.createTextNode(` ${v.label}`));
+    opt.className = 'opt-cell';
+    row.appendChild(opt);
+    cell(row, unitText(v.stats.pulse, 'bpm'), 'num');
+    cell(row, unitText(v.stats.breathing, '/min', 1), 'num');
+    cell(row, unitText(v.stats.blinksPerMin, '/min'), 'num');
     cell(row, v.stats.enoughSignal ? 'good' : 'weak', v.stats.enoughSignal ? '' : 'up');
   });
   $('resultsTable').innerHTML = '';
@@ -798,7 +821,8 @@ function renderLegend(options) {
 }
 
 // The crossroads from the welcome screen, drawn again as the result: the path your body was calmer
-// with draws thicker; if it didn't pick a side, both paths draw the same.
+// with draws thicker; if it didn't pick a side, both paths draw the same. Names sit beside it as text so
+// long options wrap instead of being cut off.
 function renderReveal(a, options) {
   const svg = $('reveal');
   const v = a.verdict;
@@ -806,27 +830,43 @@ function renderReveal(a, options) {
     if (v.kind === 'lean') return v.calmerIndex === i ? 'strong' : 'faint';
     return v.kind === 'tooClose' ? 'even' : 'unsure';
   };
-  const short = (t) => (t.length > 34 ? `${t.slice(0, 33)}…` : t);
   const el = (tag, attrs) => {
     const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
     for (const [k, val] of Object.entries(attrs)) e.setAttribute(k, val);
     return e;
   };
   svg.replaceChildren();
-  svg.appendChild(el('path', { d: 'M2 40h96l8-14 9 28 8-22 6 8h31', class: 'stem', pathLength: 1 }));
-  [14, 66].forEach((y, i) => {
+  svg.appendChild(el('path', { d: 'M4 100h74l9-22 11 46 10-36 7 12h45', class: 'stem', pathLength: 1 }));
+  [22, 178].forEach((y, i) => {
     const g = el('g', { class: `branch ${weight(i)}` });
     g.style.setProperty('--c', OPTION_COLORS[i]); // CSSOM, not a style attribute: the CSP blocks inline styles
-    g.appendChild(el('path', { d: `M160 40c34 0 42 ${y - 40} 90 ${y - 40}h70`, pathLength: 1 }));
-    g.appendChild(el('circle', { cx: 326, cy: y, r: 4.5 }));
-    const label = el('text', { x: 340, y: y + 5 });
-    label.textContent = short(options[i].label);
-    g.appendChild(label);
+    g.appendChild(el('path', { d: `M160 100c42 0 52 ${y - 100} 104 ${y - 100}h52`, pathLength: 1 }));
+    g.appendChild(el('circle', { cx: 320, cy: y, r: 6 }));
     svg.appendChild(g);
   });
-  svg.appendChild(el('circle', { cx: 160, cy: 40, r: 3.5, class: 'fork' }));
+  svg.appendChild(el('circle', { cx: 160, cy: 100, r: 4.5, class: 'fork' }));
   const summary = { strong: 'calmer', faint: 'less calm', even: 'no clear difference', unsure: 'not enough signal' };
   svg.setAttribute('aria-label', options.map((o, i) => `${o.label}: ${summary[weight(i)]}`).join('; '));
+
+  const labels = $('revealLabels');
+  labels.replaceChildren();
+  options.slice(0, 2).forEach((o, i) => {
+    const box = document.createElement('div');
+    box.className = `reveal-label ${weight(i)}`;
+    box.style.setProperty('--c', OPTION_COLORS[i]);
+    const name = document.createElement('div');
+    name.className = 'rl-name';
+    name.textContent = o.label;
+    name.title = o.label;
+    const num = document.createElement('div');
+    num.className = 'rl-num';
+    num.textContent = fmt(a.options[i].pulse);
+    const unit = document.createElement('small');
+    unit.textContent = weight(i) === 'strong' ? 'bpm · calmer' : 'bpm';
+    num.appendChild(unit);
+    box.append(name, num);
+    labels.appendChild(box);
+  });
 }
 
 function renderOptionSummary(a) {
@@ -871,7 +911,7 @@ function momentMarkers(a) {
   return marks;
 }
 
-function momentItem(numText, numClass, what, prompt) {
+function momentItem(numText, numClass, what, prompt, time) {
   const li = document.createElement('li');
   const num = document.createElement('span');
   num.className = `num ${numClass}`;
@@ -879,7 +919,13 @@ function momentItem(numText, numClass, what, prompt) {
   const body = document.createElement('div');
   const w = document.createElement('span');
   w.className = 'what';
-  w.textContent = what;
+  if (time) {
+    const at = document.createElement('span');
+    at.className = 'at';
+    at.textContent = time;
+    w.append(at);
+  }
+  w.append(document.createTextNode(what));
   const q = document.createElement('span');
   q.className = 'quote';
   q.textContent = `“${prompt}”`;
@@ -888,15 +934,16 @@ function momentItem(numText, numClass, what, prompt) {
   return li;
 }
 
-function renderMoments(a) {
+function renderMoments(a, sessionStart = 0) {
   const list = $('momentsList');
   list.innerHTML = '';
+  const at = (m) => clockText(m.startMs - sessionStart);
   a.moments.rises.forEach((m, i) => {
-    list.appendChild(momentItem(String(i + 1), '', `Pulse rose ~${fmt(m.shift)} bpm · ${m.label}, visit ${m.visit}`, m.prompt));
+    list.appendChild(momentItem(String(i + 1), '', `Pulse rose ~${fmt(m.shift)} bpm · ${m.label}, visit ${m.visit}`, m.prompt, at(m)));
   });
   if (a.moments.calmest) {
     const m = a.moments.calmest;
-    list.appendChild(momentItem('C', 'calm', `Calmest moment: pulse eased ~${fmt(Math.abs(m.shift))} bpm · ${m.label}, visit ${m.visit}`, m.prompt));
+    list.appendChild(momentItem('C', 'calm', `Calmest moment: pulse eased ~${fmt(Math.abs(m.shift))} bpm · ${m.label}, visit ${m.visit}`, m.prompt, at(m)));
   }
   if (!list.children.length) {
     const li = document.createElement('li');
@@ -952,11 +999,19 @@ async function renderHistory() {
   const list = $('historyList');
   list.innerHTML = '';
   const names = await window.gutCheck.listSessions();
+  const tally = { decided: 0, compared: 0, matched: 0 };
   for (const name of names) {
     let session;
     try { session = JSON.parse(await window.gutCheck.readSession(name)); } catch { continue; }
     if (!session.options || session.options.length < 2) continue;
     const a = analyzeSession(session);
+    if (session.choice && session.choice.optionIndex != null && !session.demo) {
+      tally.decided += 1;
+      if (a.verdict.kind === 'lean') {
+        tally.compared += 1;
+        if (session.choice.optionIndex === a.verdict.calmerIndex) tally.matched += 1;
+      }
+    }
     const div = (cls, text) => {
       const d = document.createElement('div');
       d.className = cls;
@@ -983,16 +1038,17 @@ async function renderHistory() {
       label.textContent = o.label;
       line.append(swatch(OPTION_COLORS[i]), label);
       if (calmer === i) line.appendChild(div('h-tag', 'calmer'));
+      if (session.choice && session.choice.optionIndex === i) line.appendChild(div('h-tag chosen', 'your choice'));
       body.appendChild(line);
     });
     const foot = div('h-foot');
     foot.appendChild(div('h-verdict', verdictText(a.verdict).title));
-    if (session.choice) foot.appendChild(div('h-chose', `You chose ${choiceLabel(session)}`));
+    if (session.choice && session.choice.optionIndex == null) foot.appendChild(div('h-chose', 'Still deciding'));
     if (session.demo) foot.appendChild(div('chip', 'Demo'));
     if ((session.version || 1) < 2) foot.appendChild(div('chip', 'Early format'));
     body.appendChild(foot);
 
-    // Right: delete (always visible) and an open cue.
+    // Right: delete, always visible.
     const actions = div('h-actions');
     const del = document.createElement('button');
     del.className = 'delete';
@@ -1005,7 +1061,7 @@ async function renderHistory() {
       item.remove();
       updateHistoryCount();
     };
-    actions.append(del, div('h-open', '→'));
+    actions.append(del);
 
     item.append(date, body, actions);
     const open = () => {
@@ -1023,6 +1079,15 @@ async function renderHistory() {
     list.appendChild(empty);
   }
   updateHistoryCount();
+  const sum = $('historySummary');
+  if (!tally.decided) {
+    sum.textContent = 'Once you record what you decided on a result, this shows how often your choice matched the option your body was calmer with.';
+  } else {
+    sum.textContent = `You've recorded ${tally.decided} decision${tally.decided === 1 ? '' : 's'}. `
+      + (tally.compared
+        ? `In ${tally.matched} of the ${tally.compared} where your body clearly leaned one way, you chose that option.`
+        : 'None of them had a clear body lean to compare with yet.');
+  }
 }
 
 function updateHistoryCount() {

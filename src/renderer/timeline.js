@@ -56,18 +56,18 @@ function phaseName(session, phase) {
 // Single readings swing ±10 bpm; a short rolling median shows the shape without inventing data.
 const SMOOTH_MS = 3000;
 
-function smooth(points) {
+function smooth(points, windowMs = SMOOTH_MS) {
   return points.map((p, i) => {
     const vals = [];
-    for (let j = i; j >= 0 && p.t - points[j].t <= SMOOTH_MS; j--) vals.push(points[j].v);
-    for (let j = i + 1; j < points.length && points[j].t - p.t <= SMOOTH_MS; j++) vals.push(points[j].v);
+    for (let j = i; j >= 0 && p.t - points[j].t <= windowMs; j--) vals.push(points[j].v);
+    for (let j = i + 1; j < points.length && points[j].t - p.t <= windowMs; j++) vals.push(points[j].v);
     vals.sort((a, b) => a - b);
     const mid = vals.length >> 1;
     return { t: p.t, v: vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2 };
   });
 }
 
-function renderTimeline(container, session, trace, highlights) {
+function renderTimeline(container, session, trace, highlights, medians = []) {
   readTheme();
   container.innerHTML = '';
   const start = session.phases.find((p) => p.kind === 'baseline')?.startMs ?? 0;
@@ -79,14 +79,18 @@ function renderTimeline(container, session, trace, highlights) {
   }
 
   const width = Math.max(560, container.clientWidth || 900);
-  const height = 260;
-  const m = { left: 40, right: 16, top: 30, bottom: 28 };
+  const height = 340;
+  const m = { left: 44, right: 16, top: 34, bottom: 30 };
   const plotW = width - m.left - m.right;
   const plotH = height - m.top - m.bottom;
 
-  const values = points.map((p) => p.v);
-  const lo = Math.floor((Math.min(...values) - 3) / 5) * 5;
-  const hi = Math.ceil((Math.max(...values) + 3) / 5) * 5;
+  // Every reading the SDK sent (smoothed), drawn faintly so the session reads as one connected line.
+  const raw = smooth((session.series.pulse || []).filter((p) => p.t >= start && p.t <= end && p.v > 30 && p.v < 200), 5000);
+  const values = [...points.map((p) => p.v), ...medians.map((md) => md.v)];
+  const rawVals = raw.map((p) => p.v);
+  // Scale to the reliable readings, widened by at most 8 bpm for the faint line; beyond that it is clipped.
+  const lo = Math.floor((Math.max(Math.min(...values) - 8, Math.min(...values, ...rawVals)) - 2) / 5) * 5;
+  const hi = Math.ceil((Math.min(Math.max(...values) + 8, Math.max(...values, ...rawVals)) + 2) / 5) * 5;
   const x = (t) => m.left + ((t - start) / (end - start)) * plotW;
   const y = (v) => m.top + (1 - (v - lo) / (hi - lo)) * plotH;
 
@@ -123,13 +127,25 @@ function renderTimeline(container, session, trace, highlights) {
     tx.textContent = clock(t);
   }
 
-  // Pulse line, broken where readings are missing
-  let d = '';
-  points.forEach((p, i) => {
-    const gap = i > 0 && p.t - points[i - 1].t > GAP_MS;
-    d += `${i === 0 || gap ? 'M' : 'L'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`;
-  });
-  el('path', { d, fill: 'none', stroke: INK, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+  // Visit averages: the number each visit contributes, over the window that actually counts.
+  for (const md of medians) {
+    const x0 = x(Math.max(md.startMs, start));
+    const x1 = x(md.endMs);
+    el('line', { x1: x0, x2: x1, y1: y(md.v), y2: y(md.v), stroke: OPT[md.optionIndex], 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0.9 }, svg);
+    const lab = el('text', { x: x1 - 2, y: y(md.v) - 7, fill: OPT[md.optionIndex], 'font-size': 12, 'font-weight': 700, 'text-anchor': 'end' }, svg);
+    lab.textContent = Math.round(md.v);
+  }
+
+  // Faint: all readings, including low-confidence ones that don't count. Bold: the reliable readings
+  // the result is built from. The faint line is clipped to the chart so a camera glitch can't flatten it.
+  const clipId = `plot-${Math.random().toString(36).slice(2, 8)}`;
+  const clip = el('clipPath', { id: clipId }, el('defs', {}, svg));
+  el('rect', { x: m.left, y: m.top, width: plotW, height: plotH }, clip);
+  const line = (pts, gapMs) => pts.map((p, i) => `${i === 0 || p.t - pts[i - 1].t > gapMs ? 'M' : 'L'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join('');
+  if (raw.length > 1) {
+    el('path', { d: line(raw, 15000), fill: 'none', stroke: MUTED, 'stroke-width': 1.6, opacity: 0.55, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'clip-path': `url(#${clipId})` }, svg);
+  }
+  el('path', { d: line(points, GAP_MS), fill: 'none', stroke: INK, 'stroke-width': 2.4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
 
   // Numbered moment markers at the reaction (prompt start + delay)
   highlights.forEach((h, i) => {
