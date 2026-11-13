@@ -111,6 +111,24 @@ $('deleteAllData').onclick = async () => {
 
 document.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => go(b.dataset.go); });
 
+// ---------- Theme: light by default, dark on request (remembered on this computer) ----------
+let redrawTimeline = null;
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  $('themeToggle').title = label;
+  $('themeToggle').setAttribute('aria-label', label);
+  if (redrawTimeline && $('screen-results').classList.contains('active')) redrawTimeline();
+}
+let savedTheme = 'light';
+try { savedTheme = localStorage.getItem('crossroads-theme') === 'dark' ? 'dark' : 'light'; } catch { /* storage unavailable */ }
+applyTheme(savedTheme);
+$('themeToggle').onclick = () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('crossroads-theme', next); } catch { /* storage unavailable */ }
+  applyTheme(next);
+};
+
 // Masthead: a shadow once the page scrolls; hides while scrolling down, returns on any scroll up.
 let lastScrollY = 0;
 window.addEventListener('scroll', () => {
@@ -721,7 +739,8 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
   renderReflection(a, result.options);
   renderLegend(result.options);
   // Draw after the screen is visible so the chart can measure its width.
-  requestAnimationFrame(() => renderTimeline($('timeline'), result, pulseTrace(result), momentMarkers(a)));
+  redrawTimeline = () => renderTimeline($('timeline'), result, pulseTrace(result), momentMarkers(a));
+  requestAnimationFrame(redrawTimeline);
 
   $('method').textContent = 'How this works: Presage SmartSpectra reads your pulse from tiny colour changes in your face through the camera. '
     + 'Each option is visited twice in a mirrored order (A B B A), so the slow drift of a body during a session affects both options equally. '

@@ -1,3 +1,6 @@
+// Follow the theme chosen in the main app.
+try { if (localStorage.getItem('crossroads-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch { /* storage unavailable */ }
+
 const { ValidationCode, SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { VitalsTracker } = require('../core/vitals');
