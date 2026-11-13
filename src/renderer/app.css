@@ -233,6 +233,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 1
 
 .landing .steps-label { margin: 26px 0 8px; }
 .landing .steps { margin: 0; }
+.steps.steps-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .steps.steps-4 { grid-template-columns: repeat(2, 1fr); } }
 .landing .steps b { font-size: 21px; }
 .landing .steps li { padding-top: 12px; padding-bottom: 12px; }
 .landing .steps span:not(.step-num) { font-size: 15.5px; line-height: 1.5; display: block; margin-top: 4px; }
