@@ -1,6 +1,19 @@
-// Follow the theme chosen in the main app.
-try { if (localStorage.getItem('crossroads-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch { /* storage unavailable */ }
+// Same theme as the main app (light by default), with its own toggle; the choice is shared.
+function applyLabTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.title = btn.ariaLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+}
+let labTheme = 'light';
+try { labTheme = localStorage.getItem('crossroads-theme') === 'dark' ? 'dark' : 'light'; } catch { /* storage unavailable */ }
+applyLabTheme(labTheme);
+document.getElementById('themeToggle').onclick = () => {
+  labTheme = labTheme === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('crossroads-theme', labTheme); } catch { /* storage unavailable */ }
+  applyLabTheme(labTheme);
+};
 
+const { cameraLabel } = require('./camera-name');
 const { ValidationCode, SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { VitalsTracker } = require('../core/vitals');
@@ -178,12 +191,13 @@ function savedCameraName() {
 // because "default" means different devices to the browser and to the SDK.
 async function refreshCameras() {
   const cams = await bridge.cameras();
-  const wanted = ui.cameraSelect.selectedOptions[0]?.textContent || savedCameraName();
+  const wanted = ui.cameraSelect.selectedOptions[0]?.dataset.name || savedCameraName();
   ui.cameraSelect.innerHTML = '';
   for (const c of cams) {
     const opt = document.createElement('option');
     opt.value = c.id;
-    opt.textContent = c.name || c.id;
+    opt.textContent = cameraLabel(c.name || c.id);
+    opt.dataset.name = c.name || c.id;
     ui.cameraSelect.appendChild(opt);
   }
   if (!cams.length) {
@@ -194,7 +208,7 @@ async function refreshCameras() {
   }
   const match = cams.find((c) => (c.name || c.id) === wanted);
   if (match) ui.cameraSelect.value = match.id;
-  log(`Cameras found: ${cams.map((c) => c.name || c.id).join(', ') || 'none'}`);
+  log(`Cameras found: ${cams.map((c) => cameraLabel(c.name || c.id)).join(', ') || 'none'}`);
   await applyCameraChoice();
 }
 
@@ -203,9 +217,9 @@ async function applyCameraChoice() {
   if (!id) return false;
   const chosen = await bridge.setCamera(id);
   if (!chosen) return false;
-  const name = ui.cameraSelect.selectedOptions[0].textContent;
+  const name = ui.cameraSelect.selectedOptions[0].dataset.name;
   try { localStorage.setItem(CAMERA_PREF_KEY, name); } catch { /* storage unavailable */ }
-  log(`Camera for preview + measurement: ${name}`);
+  log(`Camera for preview + measurement: ${cameraLabel(name)}`);
   return true;
 }
 
@@ -222,7 +236,7 @@ async function selectCamera() {
 }
 
 async function openCamera() {
-  const sdkName = ui.cameraSelect.selectedOptions[0]?.textContent;
+  const sdkName = ui.cameraSelect.selectedOptions[0]?.dataset.name;
   const deviceId = ui.cameraSelect.value ? await browserDeviceIdFor(sdkName) : null;
   if (!deviceId) {
     log(`Preview couldn't find "${sdkName}". Pick a camera and try again.`);
@@ -357,7 +371,7 @@ async function startLive() {
     log('No camera selected for measurement. Pick one from the list.');
     return;
   }
-  const cameraName = ui.cameraSelect.selectedOptions[0].textContent;
+  const cameraName = ui.cameraSelect.selectedOptions[0].dataset.name;
   // The SDK opens the camera itself in the main process, so the preview must let go of it first.
   reopenPreviewAfterRun = !!stream;
   await closeCamera();
@@ -369,10 +383,10 @@ async function startLive() {
     mode: 'live',
     capture: 'native',
     requestedMetrics: REQUESTED_METRICS,
-    camera: { ...info.capture, name: cameraName },
+    camera: { ...info.capture, name: cameraLabel(cameraName) },
     previewFps: measuredFps || null,
   });
-  log(`Measuring with: ${cameraName}`);
+  log(`Measuring with: ${cameraLabel(cameraName)}`);
   beginRun(src, 'live');
   ui.credits.textContent = '0';
   // Count the auto-stop from when measuring actually begins; SDK startup takes several seconds.

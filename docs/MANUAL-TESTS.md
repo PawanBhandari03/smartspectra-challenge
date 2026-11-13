@@ -16,6 +16,11 @@ Checks that need a real camera, a real API key or the installed app, with the da
 | 8 | My decisions → **Delete** one session | Session and its recording removed | ✅ Nov 12 (installed 1.0.0: confirmation names both options and the date, session removed) |
 | 9 | Bad lighting / face out of frame during settle | Guidance hint shown; after 90 s the session stops and says which check failed | ✅ Nov 11 (replay of a failing recording) |
 | 10 | Installer contents | No API key, no sessions or recordings inside; SDK loads | ✅ Nov 12 (scripted scan) |
+| 11 | Camera check steps + **Hide me** | Steps tick Camera on / Smooth / Light / Ready; Hide me blurs only the preview | ✅ Nov 13 (dev, webcam preview; live SDK run pending) |
+| 12 | Results → **Save as image** | Save dialog; PNG with options, answer, date, no pulse numbers | ✅ Nov 13 (card rendered and checked; dialog path pending on installer) |
+| 13 | Results → save a decision → **Change my answer** | "You decided" record replaces the form; My decisions shows the line and the match summary | ✅ Nov 13 (dev) |
+| 14 | Dark mode (moon button / Settings) | Every screen, chart and Signal Lab follow the theme; choice remembered | ✅ Nov 13 (dev screenshots) |
+| 15 | Phone camera name | Signal Lab log and camera list show "S21 Ultra (Windows Virtual Camera)", no owner name | ✅ Nov 13 (dev) |
 
 ## Dated live sessions
 

@@ -62,11 +62,13 @@ For live measurement you need a free Presage API key from [physiology.presagetec
 
 ## How it works
 
-1. **Name two options**, e.g. "Stay in my city" and "Move to Bangalore", with an optional detail each.
-2. **Consent and camera check.** A free preview checks your framing and frame rate before anything is measured.
-3. **The session (~4 minutes).** A calm baseline, then each option twice in a mirrored order. Every 10 seconds a new prompt helps you picture living that option ("a month in, how do your evenings feel?"). Read silently and imagine.
-4. **Your mirror.** Pulse through the session, the prompts after which your pulse rose most, reflection questions, and (only with strong evidence) the option your body stayed calmer with.
-5. **My decisions.** Every check is saved locally. Later you can record what you actually decided and compare it with what your body did.
+1. **Name two options and consent**, on one page: e.g. "Stay in my city" and "Move to Bangalore", with the plain-language terms beside them.
+2. **Camera check.** A free preview ticks off *Camera on → Smooth picture → Enough light → Ready* before anything is measured. **Hide me** blurs the preview (measurement is unaffected).
+3. **The session (~4 minutes).** A calm baseline, then each option twice in a mirrored order. Every 10 seconds a new prompt helps you picture living that option ("a month in, how do your evenings feel?"), with a thin line of your live pulse underneath in that option's colour. Read silently and imagine.
+4. **Your mirror.** The answer with an animated crossroads (the calmer path draws thicker; equal when there's no clear side), the numbers per visit, a connected pulse chart with each visit's average, the moments your pulse rose, and reflection questions. **Save as image** makes a shareable card with no pulse numbers on it.
+5. **My decisions.** Every check is saved locally. Later you record what you actually decided; CrossRoads shows it as a "You decided" note and counts how often your choice matched the option your body was calmer with.
+
+Light by default, with a dark "night journal" mode (moon button, or Settings → Appearance).
 
 ![Session timeline](docs/images/session-timeline.svg)
 
@@ -127,6 +129,8 @@ Main process (SDK, camera, storage, encrypted key) · context-isolated preload b
 - **Video never leaves the app.** The SDK processes frames on your computer. CrossRoads saves only your two options, phase timings and numbers (pulse, breathing, blinks, expression scores). Never video.
 - **Stored locally only**: `%APPDATA%\crossroads` (installed app). No accounts, no analytics, no AI services, no other network requests by CrossRoads.
 - **SDK network use:** according to Presage, the SDK contacts their servers to check the API key and credits. SDK telemetry is switched off. We have not measured the SDK's traffic ourselves.
+- **Camera names stay private.** Windows names phone cameras after their owner; CrossRoads shows and logs them without the name.
+- **Save as image** writes a picture only where you choose, and the card carries no pulse numbers.
 - **Delete any time:** one session in My decisions, or everything in Settings → *Delete all my data*. The API key can be removed in Settings.
 - **Not medical.** A general wellness reflection tool; no diagnosis, no treatment, no medical decisions. For reflecting on your own decisions only, never for measuring other people.
 
@@ -164,13 +168,13 @@ npm start
 | Command | What it does |
 |---|---|
 | `npm start` | Bundle the UI (esbuild) and launch the app |
-| `npm test` | 24 automated tests (verdict rules, filters, session plan, SDK decoding) |
+| `npm test` | 26 automated tests (verdict rules, filters, session plan, SDK decoding, private camera names) |
 | `npm run analyze` | Print the full analysis of the bundled sample (or `npm run analyze -- path/to/session.json`) |
 | `npm run dist` | Build the Windows installer and portable exe into `release/` |
 
 ## Tests
 
-`npm test` runs 24 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, and the session plan must always be A B B A or B A A B. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
+`npm test` runs 26 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, and the session plan must always be A B B A or B A A B. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
 
 ## Troubleshooting
 

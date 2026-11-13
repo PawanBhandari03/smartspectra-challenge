@@ -1,3 +1,4 @@
+const { cameraLabel } = require('./camera-name');
 const { SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { buildPlan, SessionRunner } = require('../core/session');
@@ -248,12 +249,13 @@ async function browserDeviceIdFor(name) {
 async function refreshCameras() {
   const cams = await bridge.cameras();
   const select = $('cameraSelect');
-  const wanted = select.selectedOptions[0]?.textContent || savedCameraName();
+  const wanted = select.selectedOptions[0]?.dataset.name || savedCameraName();
   select.innerHTML = '';
   for (const c of cams) {
     const opt = document.createElement('option');
     opt.value = c.id;
-    opt.textContent = c.name || c.id;
+    opt.textContent = cameraLabel(c.name || c.id);
+    opt.dataset.name = c.name || c.id;
     select.appendChild(opt);
   }
   if (!cams.length) {
@@ -270,13 +272,13 @@ async function refreshCameras() {
 async function applyCameraChoice() {
   const select = $('cameraSelect');
   if (!select.value || !(await bridge.setCamera(select.value))) return false;
-  try { localStorage.setItem(CAMERA_PREF_KEY, select.selectedOptions[0].textContent); } catch { /* storage unavailable */ }
+  try { localStorage.setItem(CAMERA_PREF_KEY, select.selectedOptions[0].dataset.name); } catch { /* storage unavailable */ }
   return true;
 }
 
 async function openCamera() {
   closeCamera();
-  const name = $('cameraSelect').selectedOptions[0]?.textContent;
+  const name = $('cameraSelect').selectedOptions[0]?.dataset.name;
   const deviceId = $('cameraSelect').value ? await browserDeviceIdFor(name) : null;
   if (!deviceId) {
     $('setupPlaceholder').textContent = 'Pick a camera above.';
@@ -537,14 +539,14 @@ async function beginSession() {
   if (!state.info.hasKey) return setupError('Live measurement needs a Presage API key. Add yours in Settings (top right), or try the sample from the home page.');
   // The SDK opens the camera itself, so the preview has to let go of it first.
   if (!(await applyCameraChoice())) return setupError('Pick a camera first.');
-  const cameraName = $('cameraSelect').selectedOptions[0].textContent;
+  const cameraName = $('cameraSelect').selectedOptions[0].dataset.name;
   closeCamera();
   const source = new LiveSource(bridge, window.gutCheck.recording, {
     mode: 'gutcheck',
     requestedMetrics: REQUESTED_METRICS,
-    camera: { name: cameraName },
+    camera: { name: cameraLabel(cameraName) },
   });
-  await runSession(source, buildPlan(state.options), { intro: `Live session with ${cameraName}` });
+  await runSession(source, buildPlan(state.options), { intro: `Live session with ${cameraLabel(cameraName)}` });
 }
 
 // Developer testing only: runs a full session from a raw recording (looped, re-planned, so its

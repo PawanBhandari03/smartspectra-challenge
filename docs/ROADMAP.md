@@ -88,6 +88,8 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Results polish (Nov 12 night): animated crossroads **result reveal** (calmer path draws thicker; even when too close), "didn't pick a side" reworded as an answer, breathing shown per visit as context (never voted)
 - [ ] Strategy: one entry can win only one prize; aim Thoughtful Real-World Use → Overall → Creative. Windows-only (no Mac/Linux build)
 - [x] UI pass (Nov 13): one-screen landing with example figure, masthead shade + scroll behaviour, dark mode, options and consent merged into one page
+- [x] UI pass part 2 (Nov 13): camera ready steps + Hide me, live pulse line, results restructure, decision record, Save as image, Settings, Signal Lab masthead, camera names private
+- [ ] 💳 👤 One live session on the final build (daylight, phone camera) = video rehearsal
 - [ ] Retake README screenshots after the UI pass (landing, options+consent, dark mode)
 - [ ] Cut 2–3 GIFs from the screen recording (session screen, prompt switching, result reveal) for the post and README
 - [ ] Rebuild installer (final, includes the result reveal); 👤 uninstall "Gut Check", install CrossRoads, re-enter the key, open the sample
