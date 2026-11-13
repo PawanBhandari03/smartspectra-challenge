@@ -83,6 +83,7 @@
   <!-- 2. Options + consent (one page) -->
   <section id="screen-options" class="screen">
     <div class="center wide">
+      <button class="back-arrow" data-go="welcome" type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></button>
       <h2>What are you deciding between?</h2>
       <p class="lead">Name your two options and read the terms beside them. Keep each option short; the optional detail makes the scenes more vivid.</p>
       <div class="options-grid">
@@ -102,7 +103,6 @@
       </div>
       <p id="optionsError" class="error hidden"></p>
       <div class="actions">
-        <button class="ghost" data-go="welcome">Back</button>
         <button id="optionsNext" class="primary" disabled>Continue to camera <span aria-hidden="true">→</span></button>
       </div>
     </div>
@@ -111,6 +111,7 @@
   <!-- 4. Setup / camera check -->
   <section id="screen-setup" class="screen">
     <div class="center wide">
+      <button class="back-arrow" data-go="options" type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></button>
       <h2>Camera check</h2>
       <div class="setup-grid">
         <div class="panel">
@@ -136,7 +137,6 @@
           <p class="session-cost"><b>Live measurement</b> · <span id="liveCost"></span></p>
           <p id="setupError" class="error hidden"></p>
           <div class="actions">
-            <button class="ghost" data-go="options">Back</button>
             <button id="beginSession" class="primary">Begin session</button>
           </div>
         </div>
