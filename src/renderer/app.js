@@ -52,6 +52,12 @@ function go(name) {
   if (state.source && name !== 'session') return Promise.resolve();
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === `screen-${name}`));
   $('appBar').classList.toggle('hidden', name === 'session');
+  const section = { options: 'options', consent: 'options', setup: 'options', history: 'history', settings: 'settings' }[name];
+  document.querySelectorAll('.app-bar .nav[data-go]').forEach((b) => {
+    if (b.dataset.go === section) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
+  $('appBar').classList.remove('tucked');
   window.scrollTo(0, 0);
   if (name === 'setup') return enterSetup();
   closeCamera();
@@ -104,6 +110,17 @@ $('deleteAllData').onclick = async () => {
 };
 
 document.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => go(b.dataset.go); });
+
+// Masthead: a shadow once the page scrolls; hides while scrolling down, returns on any scroll up.
+let lastScrollY = 0;
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const bar = $('appBar');
+  bar.classList.toggle('scrolled', y > 4);
+  if (y > 120 && y > lastScrollY + 4) bar.classList.add('tucked');
+  else if (y < lastScrollY - 4 || y <= 120) bar.classList.remove('tucked');
+  lastScrollY = y;
+}, { passive: true });
 
 // ---------- Options ----------
 
