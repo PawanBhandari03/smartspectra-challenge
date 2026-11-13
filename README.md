@@ -123,7 +123,7 @@ Main process (SDK, camera, storage, encrypted key) · context-isolated preload b
 
 ## Consent and data handling
 
-- **Consent first.** A plain-language consent screen with an explicit tick before any measurement; a REC badge and live preview while measuring; stop any time.
+- **Consent first.** Plain-language consent beside the two options, with an explicit tick before any measurement; a REC badge and live preview while measuring; stop any time.
 - **Video never leaves the app.** The SDK processes frames on your computer. CrossRoads saves only your two options, phase timings and numbers (pulse, breathing, blinks, expression scores). Never video.
 - **Stored locally only**: `%APPDATA%\crossroads` (installed app). No accounts, no analytics, no AI services, no other network requests by CrossRoads.
 - **SDK network use:** according to Presage, the SDK contacts their servers to check the API key and credits. SDK telemetry is switched off. We have not measured the SDK's traffic ourselves.

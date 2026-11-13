@@ -52,7 +52,7 @@ function go(name) {
   if (state.source && name !== 'session') return Promise.resolve();
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === `screen-${name}`));
   $('appBar').classList.toggle('hidden', name === 'session');
-  const section = { options: 'options', consent: 'options', setup: 'options', history: 'history', settings: 'settings' }[name];
+  const section = { options: 'options', setup: 'options', history: 'history', settings: 'settings' }[name];
   document.querySelectorAll('.app-bar .nav[data-go]').forEach((b) => {
     if (b.dataset.go === section) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
@@ -189,13 +189,11 @@ $('optionsNext').onclick = () => {
   $('optionsError').classList.toggle('hidden', !error);
   if (error) return;
   state.options = cleaned;
-  go('consent');
+  go('setup');
 };
 
-// ---------- Consent ----------
-
-$('consentBox').onchange = () => { $('consentNext').disabled = !$('consentBox').checked; };
-$('consentNext').onclick = () => go('setup');
+// Consent sits beside the options: nothing continues to the camera without the tick.
+$('consentBox').onchange = () => { $('optionsNext').disabled = !$('consentBox').checked; };
 
 // ---------- Setup: camera + data source ----------
 
@@ -934,7 +932,7 @@ function renderReflection(a, options) {
 $('newSession').onclick = () => {
   state.options = [{ label: '', detail: '' }, { label: '', detail: '' }];
   $('consentBox').checked = false;
-  $('consentNext').disabled = true;
+  $('optionsNext').disabled = true;
   go('options');
 };
 
@@ -1051,7 +1049,7 @@ async function renderHistory() {
     await openSample();
     $('watchSample').click();
   } else if (auto.startsWith('screen:')) {
-    if (auto === 'screen:options' || auto === 'screen:consent') {
+    if (auto === 'screen:options') {
       state.options = [{ label: 'A quiet afternoon at the beach', detail: '' }, { label: 'Giving a speech to 1,000 people', detail: 'no preparation' }];
     }
     await go(auto.slice(7));

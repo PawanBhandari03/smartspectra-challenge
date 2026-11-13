@@ -87,6 +87,8 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] 👤 Real decision ("move to Bangalore") may appear in the public docs: approved by Pawan (Nov 12)
 - [x] Results polish (Nov 12 night): animated crossroads **result reveal** (calmer path draws thicker; even when too close), "didn't pick a side" reworded as an answer, breathing shown per visit as context (never voted)
 - [ ] Strategy: one entry can win only one prize; aim Thoughtful Real-World Use → Overall → Creative. Windows-only (no Mac/Linux build)
+- [x] UI pass (Nov 13): one-screen landing with example figure, masthead shade + scroll behaviour, dark mode, options and consent merged into one page
+- [ ] Retake README screenshots after the UI pass (landing, options+consent, dark mode)
 - [ ] Cut 2–3 GIFs from the screen recording (session screen, prompt switching, result reveal) for the post and README
 - [ ] Rebuild installer (final, includes the result reveal); 👤 uninstall "Gut Check", install CrossRoads, re-enter the key, open the sample
 - [ ] 👤 Publish GitHub Release v1.0.0: upload only `CrossRoads-Setup-1.0.0.exe` and `CrossRoads-Portable-1.0.0.exe` (not `latest.yml` or `.blockmap`)

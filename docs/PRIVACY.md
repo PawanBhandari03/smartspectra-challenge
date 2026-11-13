@@ -4,7 +4,7 @@ CrossRoads reads signals from a camera, so this page says exactly what happens w
 
 ## Consent
 
-- Before any measurement, the app explains what it does and asks for an explicit tick: *"I understand and want to continue."* The **Begin** button stays disabled until then.
+- Before any measurement, the app explains what it does right beside the two options and asks for an explicit tick: *"I understand and want to continue."* The **Continue to camera** button stays disabled until then.
 - The camera is only on during the camera check and the session itself. A **REC** badge and the live preview show when it is measuring.
 - Every session can be stopped at any time ("Stop session").
 - CrossRoads is for **one person reflecting on their own decision**. It is not designed or allowed for measuring other people.

@@ -80,36 +80,31 @@
     </div>
   </section>
 
-  <!-- 2. Options -->
+  <!-- 2. Options + consent (one page) -->
   <section id="screen-options" class="screen">
-    <div class="center narrow">
-      <p class="eyebrow">Step 1 of 3</p>
+    <div class="center wide">
+      <p class="eyebrow">Step 1 of 2</p>
       <h2>What are you deciding between?</h2>
-      <p class="lead">Keep each option short. The optional detail makes the scenes more vivid.</p>
-      <div id="optionList" class="option-list"></div>
+      <p class="lead">Name your two options and read the terms beside them. Keep each option short; the optional detail makes the scenes more vivid.</p>
+      <div class="options-grid">
+        <div>
+          <div id="optionList" class="option-list"></div>
+        </div>
+        <aside class="consent-card" aria-labelledby="consentTitle">
+          <h3 id="consentTitle">Before we start</h3>
+          <ul class="facts">
+            <li><span class="fact-icon">1</span><div><b>Your camera measures, nothing is filmed.</b> Video is processed on this computer. Only numbers are saved, on this computer.</div></li>
+            <li><span class="fact-icon">2</span><div><b>It's a mirror, not a decision machine.</b> A racing heart can mean fear or excitement. The result is a prompt to reflect, never a verdict.</div></li>
+            <li><span class="fact-icon">3</span><div><b>Not medical advice.</b> CrossRoads is a general wellness tool and doesn't diagnose anything.</div></li>
+            <li><span class="fact-icon">4</span><div><b>You can stop at any time.</b></div></li>
+          </ul>
+          <label class="check"><input id="consentBox" type="checkbox"> I understand and want to continue</label>
+        </aside>
+      </div>
       <p id="optionsError" class="error hidden"></p>
       <div class="actions">
         <button class="ghost" data-go="welcome">Back</button>
-        <button id="optionsNext" class="primary">Next</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3. Consent -->
-  <section id="screen-consent" class="screen">
-    <div class="center narrow">
-      <p class="eyebrow">Step 2 of 3</p>
-      <h2>Before we start</h2>
-      <ul class="facts">
-        <li><span class="fact-icon">1</span><div><b>Your camera measures, nothing is filmed.</b> Video is processed on this computer. Only numbers are saved, on this computer.</div></li>
-        <li><span class="fact-icon">2</span><div><b>It's a mirror, not a decision machine.</b> A racing heart can mean fear or excitement. The result is a prompt to reflect, never a verdict.</div></li>
-        <li><span class="fact-icon">3</span><div><b>Not medical advice.</b> CrossRoads is a general wellness tool and doesn't diagnose anything.</div></li>
-        <li><span class="fact-icon">4</span><div><b>You can stop at any time.</b></div></li>
-      </ul>
-      <label class="check"><input id="consentBox" type="checkbox"> I understand and want to continue</label>
-      <div class="actions">
-        <button class="ghost" data-go="options">Back</button>
-        <button id="consentNext" class="primary" disabled>Continue</button>
+        <button id="optionsNext" class="primary" disabled>Continue to camera <span aria-hidden="true">→</span></button>
       </div>
     </div>
   </section>
@@ -117,7 +112,7 @@
   <!-- 4. Setup / camera check -->
   <section id="screen-setup" class="screen">
     <div class="center wide">
-      <p class="eyebrow">Step 3 of 3</p>
+      <p class="eyebrow">Step 2 of 2</p>
       <h2>Camera check</h2>
       <div class="setup-grid">
         <div class="panel">
@@ -143,7 +138,7 @@
           <p class="session-cost"><b>Live measurement</b> · <span id="liveCost"></span></p>
           <p id="setupError" class="error hidden"></p>
           <div class="actions">
-            <button class="ghost" data-go="consent">Back</button>
+            <button class="ghost" data-go="options">Back</button>
             <button id="beginSession" class="primary">Begin session</button>
           </div>
         </div>
