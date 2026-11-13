@@ -11,3 +11,9 @@ test('ordinary camera names are unchanged', () => {
   assert.equal(cameraLabel('USB2.0 HD UVC WebCam'), 'USB2.0 HD UVC WebCam');
   assert.equal(cameraLabel(''), '');
 });
+
+test('curly apostrophes and empty names are handled', () => {
+  assert.equal(cameraLabel('Asha’s Pixel 8 Camera'), 'Pixel 8 Camera');
+  assert.equal(cameraLabel(''), '');
+  assert.equal(cameraLabel(null), '');
+});

@@ -28,6 +28,7 @@ Windows often names phone cameras after their owner ("Name's Phone"). CrossRoads
 
 - **According to Presage**, the SDK contacts Presage's servers to check the API key and credits; video frames are processed locally.
 - **SDK telemetry is switched off** (`enableTelemetry: false`).
+- **Only seven measurements are requested** from the SDK: chest and abdomen breathing, breathing rate, pulse, HRV, blinks and expression scores ([`src/core/metrics.js`](../src/core/metrics.js)). Face landmarks, the blood-pressure trace and talking detection are never requested, and an automated test fails if the list grows.
 - CrossRoads itself makes **no other network requests**: no analytics, no AI services, no accounts.
 - We have **not** independently measured the SDK's network traffic; the statement above is Presage's.
 

@@ -129,6 +129,7 @@ Main process (SDK, camera, storage, encrypted key) · context-isolated preload b
 - **Video never leaves the app.** The SDK processes frames on your computer. CrossRoads saves only your two options, phase timings and numbers (pulse, breathing, blinks, expression scores). Never video.
 - **Stored locally only**: `%APPDATA%\crossroads` (installed app). No accounts, no analytics, no AI services, no other network requests by CrossRoads.
 - **SDK network use:** according to Presage, the SDK contacts their servers to check the API key and credits. SDK telemetry is switched off. We have not measured the SDK's traffic ourselves.
+- **Only what it needs:** CrossRoads asks the SDK for seven measurements (breathing, pulse, HRV, blinks, expressions) and nothing else; a test fails if that list grows.
 - **Camera names stay private.** Windows names phone cameras after their owner; CrossRoads shows and logs them without the name.
 - **Save as image** writes a picture only where you choose, and the card carries no pulse numbers.
 - **Delete any time:** one session in My decisions, or everything in Settings → *Delete all my data*. The API key can be removed in Settings.
@@ -168,13 +169,13 @@ npm start
 | Command | What it does |
 |---|---|
 | `npm start` | Bundle the UI (esbuild) and launch the app |
-| `npm test` | 26 automated tests (verdict rules, filters, session plan, SDK decoding, private camera names) |
+| `npm test` | 44 automated tests (verdict rules, filters, session plan, SDK decoding, replay, result wording, requested metrics, private camera names) |
 | `npm run analyze` | Print the full analysis of the bundled sample (or `npm run analyze -- path/to/session.json`) |
 | `npm run dist` | Build the Windows installer and portable exe into `release/` |
 
 ## Tests
 
-`npm test` runs 26 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, and the session plan must always be A B B A or B A A B. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
+`npm test` runs 44 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, the session plan must always be A B B A or B A A B, result wording must never call a choice wrong, and the SDK must only be asked for the seven measurements listed in the privacy notes. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
 
 ## Troubleshooting
 

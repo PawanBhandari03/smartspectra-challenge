@@ -97,3 +97,36 @@ test('breathing: missing readings never change the pulse verdict', () => {
 test('bundled sample: every visit has a breathing reading', () => {
   for (const v of analyzeSession(sample).visits) assert.ok(v.stats.breathing > 5 && v.stats.breathing < 40);
 });
+
+test('mirrored B A A B order: the calmer option is found by option, not by visit position', () => {
+  // Option B (index 1) is visited first and last here, and is calmer both times.
+  const { verdict, options } = analyzeSession(abbaSession([64, 76, 75, 65], { order: [1, 0, 0, 1] }));
+  assert.equal(verdict.kind, 'lean');
+  assert.equal(verdict.calmerIndex, 1);
+  assert.ok(options[1].pulse < options[0].pulse);
+});
+
+test('sessions saved in the early (v1) format are never given a verdict', () => {
+  const session = abbaSession([65, 76, 77, 66]);
+  session.version = 1;
+  assert.equal(analyzeSession(session).verdict.kind, 'incomplete');
+});
+
+test('a jump faster than a resting heart can change is dropped as a camera artifact', () => {
+  const pulse = [];
+  for (let t = 0; t < 20000; t += 1000) pulse.push({ t, v: t === 10000 ? 90 : 66, c: 90, s: true });
+  const trace = pulseTrace({ series: { pulse } });
+  assert.ok(!trace.some((p) => p.v === 90));
+  assert.equal(trace.length, 19);
+});
+
+test('unstable readings never reach the chart\'s reliable line', () => {
+  const pulse = [{ t: 0, v: 70, c: 90, s: true }, { t: 1000, v: 71, c: 90, s: false }, { t: 2000, v: 70, c: 90, s: true }];
+  assert.deepEqual(pulseTrace({ series: { pulse } }).map((p) => p.t), [0, 2000]);
+});
+
+test('the verdict is the same every time the same session is analysed', () => {
+  const a = analyzeSession(sample).verdict;
+  const b = analyzeSession(JSON.parse(JSON.stringify(sample))).verdict;
+  assert.deepEqual(a, b);
+});
