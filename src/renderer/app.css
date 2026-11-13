@@ -142,9 +142,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ink); width: 1
 
 /* Fig. 1: the sample session as a crossroads, styled like a plate in a journal. */
 .plate { margin: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 26px 16px; }
-.plate-head { display: flex; justify-content: space-between; margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--rule);
+.plate-head { margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--rule);
   font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.plate-head span:first-child { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 16px; color: var(--ink-2); }
 .plate-art { display: block; width: 100%; height: auto; overflow: visible; }
 .plate-rules path { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 5; fill: none; }
 .plate-art path[pathLength] { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
