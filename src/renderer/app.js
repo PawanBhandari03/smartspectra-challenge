@@ -78,6 +78,12 @@ const KEY_STATUS = {
 async function renderSettings() {
   const s = await window.gutCheck.settings.get();
   $('keyStatus').textContent = KEY_STATUS[s.keySource];
+  $('keyPill').textContent = s.keySource === 'none' ? 'Not set' : 'Ready';
+  $('keyPill').className = `pill ${s.keySource === 'none' ? 'warn' : 'ok'}`;
+  $('appVersion').textContent = s.appVersion ? `v${s.appVersion}` : '';
+  $('sdkVersion').textContent = s.sdkVersion ? `v${s.sdkVersion}` : '';
+  syncThemeControl();
+  $('hideMeDefault').checked = hideMe;
   $('removeKey').disabled = s.keySource !== 'saved';
   $('dataDir').textContent = s.dataDir;
   $('keyMessage').textContent = s.encryptionAvailable ? '' : 'Secure storage is not available on this computer, so a key cannot be saved.';
@@ -119,15 +125,38 @@ function applyTheme(theme) {
   $('themeToggle').title = label;
   $('themeToggle').setAttribute('aria-label', label);
   if (redrawTimeline && $('screen-results').classList.contains('active')) redrawTimeline();
+  syncThemeControl();
 }
+function syncThemeControl() {
+  const dark = document.documentElement.dataset.theme === 'dark';
+  $('themeLight').setAttribute('aria-checked', String(!dark));
+  $('themeDark').setAttribute('aria-checked', String(dark));
+}
+function setTheme(next) {
+  try { localStorage.setItem('crossroads-theme', next); } catch { /* storage unavailable */ }
+  applyTheme(next);
+}
+$('themeLight').onclick = () => setTheme('light');
+$('themeDark').onclick = () => setTheme('dark');
 let savedTheme = 'light';
 try { savedTheme = localStorage.getItem('crossroads-theme') === 'dark' ? 'dark' : 'light'; } catch { /* storage unavailable */ }
 applyTheme(savedTheme);
-$('themeToggle').onclick = () => {
-  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  try { localStorage.setItem('crossroads-theme', next); } catch { /* storage unavailable */ }
-  applyTheme(next);
+$('themeToggle').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+
+// ---------- "Hide me": blur the camera preview only (the SDK still measures the real picture) ----------
+let hideMe = false;
+try { hideMe = localStorage.getItem('crossroads-hide-me') === '1'; } catch { /* storage unavailable */ }
+function applyHideMe() {
+  document.querySelectorAll('.hideable').forEach((el) => el.classList.toggle('blurred', hideMe));
+  document.querySelectorAll('.hide-me span').forEach((el) => { el.textContent = hideMe ? 'Show me' : 'Hide me'; });
+}
+document.querySelectorAll('.hide-me').forEach((b) => { b.onclick = () => { hideMe = !hideMe; applyHideMe(); }; });
+$('hideMeDefault').onchange = () => {
+  hideMe = $('hideMeDefault').checked;
+  try { localStorage.setItem('crossroads-hide-me', hideMe ? '1' : '0'); } catch { /* storage unavailable */ }
+  applyHideMe();
 };
+applyHideMe();
 
 // Masthead: a shadow once the page scrolls; hides while scrolling down, returns on any scroll up.
 let lastScrollY = 0;
@@ -264,7 +293,34 @@ async function openCamera() {
   }
   $('setupVideo').srcObject = state.stream;
   $('setupPlaceholder').classList.add('hidden');
+  setReady('rsCamera', true);
   trackPreviewFps(state.stream);
+  trackPreviewLight(state.stream);
+}
+
+// Camera check steps: camera on, smooth (25+ fps), enough light, then ready.
+function setReady(id, ok) {
+  $(id).classList.toggle('ok', ok);
+  const all = ['rsCamera', 'rsSmooth', 'rsLight'].every((x) => $(x).classList.contains('ok'));
+  $('rsReady').classList.toggle('ok', all);
+}
+
+// Rough brightness of the preview (average of a tiny copy), checked twice a second.
+function trackPreviewLight(stream) {
+  const video = $('setupVideo');
+  const c = document.createElement('canvas');
+  c.width = 32;
+  c.height = 18;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  const timer = setInterval(() => {
+    if (state.stream !== stream) { clearInterval(timer); return; }
+    if (video.readyState < 2) return;
+    ctx.drawImage(video, 0, 0, c.width, c.height);
+    const px = ctx.getImageData(0, 0, c.width, c.height).data;
+    let sum = 0;
+    for (let i = 0; i < px.length; i += 4) sum += 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2];
+    setReady('rsLight', sum / (px.length / 4) > 70);
+  }, 500);
 }
 
 // Free frame-rate check while the preview is open. The SDK needs 25+ frames per second.
@@ -278,6 +334,7 @@ function trackPreviewFps(stream) {
     frames = frames.filter((t) => now - t < 2000);
     const fps = frames.length / 2;
     const info = $('fpsInfo');
+    setReady('rsSmooth', fps >= 25);
     if (fps >= 25) {
       info.textContent = `Camera smooth ✓ (${fps > 30 ? '30+' : Math.round(fps)} fps)`;
       info.className = 'fps-info good';
@@ -296,6 +353,7 @@ function closeCamera() {
   state.stream = null;
   $('setupVideo').srcObject = null;
   $('fpsInfo').textContent = '';
+  ['rsCamera', 'rsSmooth', 'rsLight', 'rsReady'].forEach((id) => $(id).classList.remove('ok'));
   $('setupPlaceholder').textContent = 'Camera is off';
   $('setupPlaceholder').classList.remove('hidden');
 }
@@ -339,8 +397,34 @@ function sessionLog(msg) {
   console.log(msg);
 }
 
+// A thin line of the live pulse under the prompt, in the colour of the option being imagined.
+const LIVE_LINE_MS = 40000;
+live.line = [];
+function updateLiveLine(pulse) {
+  const now = state.runner?.now ? state.runner.now() : performance.now();
+  if (pulse?.value != null && pulse.ts !== live.lineTs) {
+    live.lineTs = pulse.ts;
+    live.line.push({ t: now, v: pulse.value });
+  }
+  live.line = live.line.filter((p) => now - p.t <= LIVE_LINE_MS);
+  const pts = live.line;
+  $('liveLineNum').textContent = pulse?.value != null ? Math.round(pulse.value) : '—';
+  const svg = $('liveLineSvg');
+  if (pts.length < 2) { svg.replaceChildren(); return; }
+  const vals = pts.map((p) => p.v);
+  const mid = (Math.min(...vals) + Math.max(...vals)) / 2;
+  const half = Math.max(6, (Math.max(...vals) - Math.min(...vals)) / 2 + 2);
+  const x = (t) => 480 - ((now - t) / LIVE_LINE_MS) * 480;
+  const y = (v) => 35 - ((v - mid) / half) * 30;
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join('');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', d);
+  svg.replaceChildren(path);
+}
+
 function renderLiveVitals() {
   const { pulse, breathing, expression, blinkCount } = live.tracker;
+  updateLiveLine(pulse);
   $('vPulse').textContent = pulse?.value != null ? Math.round(pulse.value) : '—';
   $('vPulseQ').textContent = pulse ? (pulse.stable ? 'steady' : 'warming up') : 'waiting';
   $('vPulseQ').className = `vital-q ${pulse?.stable ? 'stable' : ''}`;
@@ -361,6 +445,7 @@ function renderLiveVitals() {
 function applyFocusMode() {
   const on = $('focusMode').checked;
   $('vitalGrid').classList.toggle('focus', on);
+  $('liveLine').classList.toggle('hidden', on);
   $('focusNote').classList.toggle('hidden', !on);
   try { localStorage.setItem(FOCUS_PREF_KEY, on ? '1' : '0'); } catch { /* storage unavailable */ }
 }
@@ -418,6 +503,7 @@ function onPhase(phase, index) {
   $('phaseLabel').textContent = phaseTitle(phase);
   $('settleChecks').classList.toggle('hidden', phase.kind !== 'settle');
   const title = $('optionTitle');
+  $('liveLine').style.setProperty('--line', phase.kind === 'option' ? OPTION_COLORS[phase.optionIndex] : 'var(--accent)');
   if (phase.kind === 'option') {
     title.textContent = `${state.plan.options[phase.optionIndex].label}${phase.visit === 2 ? ' · second look' : ''}`;
     title.className = `option-title opt${phase.optionIndex}`;
@@ -508,6 +594,8 @@ async function runSession(source, plan, { speed = 1, demo = false, script = null
   source.on('loop', () => live.tracker.blinks.reset());
 
   live.tracker.reset();
+  live.line = [];
+  $('liveLineSvg').replaceChildren();
   live.startedAt = performance.now();
   live.previewSeen = false;
   $('heartIcon').classList.remove('beating');
@@ -742,6 +830,11 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
 
   const text = verdictText(a.verdict);
   renderReveal(a, result.options);
+  currentCard = {
+    options: result.options,
+    verdict: a.verdict,
+    date: new Date(result.createdAt || Date.now()).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' }),
+  };
   $('resultsTitle').textContent = text.title;
   $('resultsNote').textContent = text.note;
 
@@ -802,6 +895,108 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
     : `${result.demo ? 'Demo session (recorded data). ' : ''}`
       + `Saved: sessions/${sessionName}${recordingName ? ` · recordings/${recordingName}` : ''}`;
 }
+
+// ---------- "Save as image": a shareable card of the result, without any pulse numbers ----------
+
+let currentCard = null;
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w;
+    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; } else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function drawDecisionCard({ options, verdict, date }) {
+  await Promise.all(['500 40px Newsreader', 'italic 400 28px Newsreader'].map((f) => document.fonts.load(f).catch(() => null)));
+  const W = 1200;
+  const H = 675;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext('2d');
+  const C = { paper: '#f4efe6', sheet: '#fbf8f2', ink: '#1f1d1a', muted: '#847b6f', rule: '#cdbfaa', accent: '#2f5d46', a: '#2f62a8', b: '#c8612e' };
+  const serif = 'Newsreader, Georgia, serif';
+  ctx.fillStyle = C.paper;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = C.accent;
+  ctx.fillRect(0, 0, W, 8);
+  ctx.fillStyle = C.ink;
+  ctx.font = `600 30px ${serif}`;
+  ctx.fillText('CrossRoads', 64, 78);
+  ctx.fillStyle = C.muted;
+  ctx.font = `italic 22px ${serif}`;
+  ctx.fillText('a decision moment', 228, 78);
+  ctx.textAlign = 'right';
+  ctx.fillText(date, W - 64, 78);
+  ctx.textAlign = 'left';
+  ctx.strokeStyle = C.rule;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(64, 104); ctx.lineTo(W - 64, 104); ctx.stroke();
+
+  // The answer
+  const title = verdictText(verdict).title;
+  ctx.fillStyle = C.ink;
+  ctx.font = `500 50px ${serif}`;
+  wrapText(ctx, title, W - 128).slice(0, 2).forEach((l, i) => ctx.fillText(l, 64, 176 + i * 60));
+
+  // The crossroads
+  const weight = (i) => (verdict.kind === 'lean' ? (verdict.calmerIndex === i ? 'strong' : 'faint') : verdict.kind === 'tooClose' ? 'even' : 'faint');
+  const y0 = 440;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = C.accent;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(64, y0); ctx.lineTo(190, y0); ctx.lineTo(204, y0 - 34); ctx.lineTo(220, y0 + 40); ctx.lineTo(234, y0 - 26); ctx.lineTo(244, y0); ctx.lineTo(320, y0);
+  ctx.stroke();
+  [[-100, C.a], [100, C.b]].forEach(([dy, color], i) => {
+    const w = weight(i);
+    ctx.globalAlpha = w === 'faint' ? 0.45 : 1;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = w === 'strong' ? 12 : w === 'faint' ? 3 : 5;
+    ctx.beginPath();
+    ctx.moveTo(320, y0);
+    ctx.bezierCurveTo(400, y0, 420, y0 + dy, 520, y0 + dy);
+    ctx.lineTo(600, y0 + dy);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(606, y0 + dy, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.ink;
+    ctx.font = `${w === 'strong' ? 600 : 400} 32px ${serif}`;
+    const lines = wrapText(ctx, options[i].label, W - 700).slice(0, 2);
+    lines.forEach((l, j) => ctx.fillText(l, 640, y0 + dy + 11 - (lines.length - 1) * 18 + j * 38));
+    if (w === 'strong') {
+      ctx.fillStyle = C.accent;
+      ctx.font = `600 20px ${'Segoe UI, sans-serif'}`;
+      ctx.fillText('CALMER', 640, y0 + dy + 11 + (lines.length > 1 ? 40 : 40));
+    }
+    ctx.globalAlpha = 1;
+  });
+  ctx.fillStyle = C.ink;
+  ctx.beginPath(); ctx.arc(320, y0, 7, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = C.muted;
+  ctx.font = `italic 22px ${serif}`;
+  ctx.fillText('Pulse read through a webcam with Presage SmartSpectra. A mirror, not a verdict.', 64, H - 44);
+  return c.toDataURL('image/png');
+}
+
+$('saveCard').onclick = async () => {
+  if (!currentCard) return;
+  const url = await drawDecisionCard(currentCard);
+  const slug = currentCard.options.map((o) => o.label).join(' or ').replace(/[^\w ]+/g, '').trim().slice(0, 50) || 'decision';
+  const saved = await window.gutCheck.card.save(url, `CrossRoads - ${slug}.png`);
+  if (saved) {
+    $('saveCard').textContent = 'Saved ✓';
+    setTimeout(() => { $('saveCard').textContent = 'Save as image'; }, 1800);
+  }
+};
 
 function swatch(color) {
   const s = document.createElement('span');

@@ -114,12 +114,19 @@
     <div class="center wide">
       <button class="back-arrow" data-go="options" type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></button>
       <h2>Camera check</h2>
+      <ol id="readySteps" class="ready-steps" aria-live="polite">
+        <li id="rsCamera">Camera on</li>
+        <li id="rsSmooth">Smooth picture</li>
+        <li id="rsLight">Enough light</li>
+        <li id="rsReady">Ready</li>
+      </ol>
       <div class="setup-grid">
         <div class="panel">
-          <div class="video-wrap">
+          <div class="video-wrap hideable">
             <video id="setupVideo" autoplay muted playsinline></video>
             <div class="oval"></div>
             <div id="setupPlaceholder" class="placeholder">Camera is off</div>
+            <button class="hide-me" type="button" title="Blur the preview (measuring is not affected)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Hide me</span></button>
           </div>
           <div class="row">
             <select id="cameraSelect"></select>
@@ -149,11 +156,12 @@
   <!-- 5. Session: live panel (camera, vitals, log) + prompts -->
   <section id="screen-session" class="screen session">
     <aside class="live-panel">
-      <div class="live-video">
+      <div class="live-video hideable">
         <canvas id="thumbCanvas"></canvas>
         <div class="oval"></div>
         <div id="liveNote" class="placeholder"></div>
         <span id="thumbBadge" class="badge-rec">● REC</span>
+        <button class="hide-me" type="button" title="Blur the preview (measuring is not affected)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Hide me</span></button>
       </div>
 
       <div id="vitalGrid" class="vital-grid">
@@ -223,6 +231,10 @@
           <li id="chkFace">Face found</li>
           <li id="chkPulse">Pulse found</li>
         </ul>
+        <div id="liveLine" class="live-line" aria-hidden="true">
+          <svg id="liveLineSvg" viewBox="0 0 480 70" preserveAspectRatio="none"></svg>
+          <div class="live-line-meta"><span id="liveLineNum" class="live-line-num">—</span><span class="live-line-label">bpm · your pulse, last 40 seconds</span></div>
+        </div>
       </div>
       <button id="stopSession" class="ghost stop">Stop session</button>
     </main>
@@ -315,7 +327,10 @@
 
       <div class="actions">
         <button class="ghost" data-go="history">← Back to my decisions</button>
-        <button id="newSession" class="primary">New check</button>
+        <div class="row">
+          <button id="saveCard" class="secondary" title="Save a picture of this result (no pulse numbers on it)">Save as image</button>
+          <button id="newSession" class="primary">New check</button>
+        </div>
       </div>
     </div>
   </section>
@@ -333,35 +348,60 @@
 
   <!-- 8. Settings -->
   <section id="screen-settings" class="screen">
-    <div class="center narrow">
+    <div class="center wide">
       <p class="eyebrow">Settings</p>
       <h2>Settings &amp; your data</h2>
+      <p class="lead">Your key, how the app looks, and everything CrossRoads keeps on this computer.</p>
 
-      <div class="card">
-        <h3>Presage API key</h3>
-        <p class="muted">Live measurement needs a free key from Presage (physiology.presagetech.com). It is stored
-          encrypted on this computer only. The sample session works without one.</p>
-        <p>Status: <b id="keyStatus">—</b></p>
-        <div class="row">
-          <input id="keyInput" type="password" placeholder="Paste your API key" autocomplete="off" spellcheck="false">
-          <button id="saveKey" class="primary">Save key</button>
-          <button id="removeKey" class="ghost">Remove</button>
+      <div class="settings-grid">
+        <div class="card set-card">
+          <div class="set-head"><h3>Presage API key</h3><span id="keyPill" class="pill">—</span></div>
+          <p class="set-text">Live measurement needs a free key from Presage (physiology.presagetech.com). It's stored
+            encrypted on this computer only. The sample works without one.</p>
+          <p class="set-status" id="keyStatus">—</p>
+          <div class="row">
+            <input id="keyInput" type="password" placeholder="Paste your API key" autocomplete="off" spellcheck="false">
+            <button id="saveKey" class="primary">Save key</button>
+          </div>
+          <div class="row set-foot">
+            <button id="removeKey" class="ghost small">Remove saved key</button>
+            <span id="keyMessage" class="fine"></span>
+          </div>
         </div>
-        <p id="keyMessage" class="fine"></p>
-      </div>
 
-      <div class="card">
-        <h3>Your data</h3>
-        <ul class="data-facts">
-          <li>Saved: options, phase timings and numbers (pulse, breathing, blinks, expressions). <b>Never video.</b></li>
-          <li>Kept only on this computer, in: <code id="dataDir"></code></li>
-          <li>SDK telemetry is <b>off</b>. According to Presage, the SDK contacts their servers to check your API key and credits; video frames are processed on this computer.</li>
-        </ul>
-        <div class="row">
-          <button id="openDataFolder">Open data folder</button>
-          <button id="deleteAllData" class="danger">Delete all my data</button>
+        <div class="card set-card">
+          <div class="set-head"><h3>Appearance</h3></div>
+          <p class="set-text">Light is the default. Dark mode is a "night journal": the same paper and ink, for low light.</p>
+          <div class="seg-control" role="radiogroup" aria-label="Theme">
+            <button id="themeLight" type="button" role="radio">Light</button>
+            <button id="themeDark" type="button" role="radio">Dark</button>
+          </div>
+          <label class="toggle set-toggle"><input id="hideMeDefault" type="checkbox"> <span>Blur my camera preview by default ("Hide me")</span></label>
         </div>
-        <p id="dataMessage" class="fine"></p>
+
+        <div class="card set-card">
+          <div class="set-head"><h3>Your data</h3><span class="pill ok">On this computer</span></div>
+          <ul class="set-facts">
+            <li><b>Saved:</b> your two options, timings and numbers (pulse, breathing, blinks, expressions). <b>Never video.</b></li>
+            <li><b>Where:</b> <code id="dataDir"></code></li>
+            <li><b>Network:</b> SDK telemetry is off. According to Presage, the SDK contacts their servers only to check your key and credits; video is processed on this computer.</li>
+          </ul>
+          <div class="row">
+            <button id="openDataFolder">Open data folder</button>
+            <button id="deleteAllData" class="danger">Delete all my data</button>
+          </div>
+          <p id="dataMessage" class="fine"></p>
+        </div>
+
+        <div class="card set-card">
+          <div class="set-head"><h3>About</h3></div>
+          <dl class="about-list">
+            <dt>App</dt><dd>CrossRoads <span id="appVersion"></span></dd>
+            <dt>Measuring</dt><dd>Presage SmartSpectra SDK <span id="sdkVersion"></span>, camera only</dd>
+            <dt>Purpose</dt><dd>A wellness reflection tool. It is not medical advice and doesn't diagnose anything.</dd>
+            <dt>Method</dt><dd>Each option imagined twice (A B B A); a side is named only when both rounds agree by more than 6 bpm.</dd>
+          </dl>
+        </div>
       </div>
     </div>
   </section>

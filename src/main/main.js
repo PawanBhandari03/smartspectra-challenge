@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, safeStorage, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { SmartSpectraSDK, CameraSelection } = require('@smartspectra/node-sdk');
@@ -223,7 +223,24 @@ ipcMain.handle('session:delete', (_e, name) => {
 
 // ---------- Settings & data ----------
 
+// "Save as image" on a result: the renderer draws the card; only a PNG data URL is accepted here.
+ipcMain.handle('card:save', async (_e, dataUrl, suggestedName) => {
+  const prefix = 'data:image/png;base64,';
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith(prefix)) return null;
+  const name = String(suggestedName || 'crossroads.png').replace(/[^\w .-]/g, '').slice(0, 80) || 'crossroads.png';
+  const { canceled, filePath } = await dialog.showSaveDialog(win, {
+    title: 'Save decision card',
+    defaultPath: path.join(app.getPath('pictures'), name.endsWith('.png') ? name : `${name}.png`),
+    filters: [{ name: 'PNG image', extensions: ['png'] }],
+  });
+  if (canceled || !filePath) return null;
+  await fs.promises.writeFile(filePath, Buffer.from(dataUrl.slice(prefix.length), 'base64'));
+  return filePath;
+});
+
 ipcMain.handle('settings:get', async () => ({
+  appVersion: app.getVersion(),
+  sdkVersion: SmartSpectraSDK.version,
   keySource: keySource(),
   encryptionAvailable: await safeStorage.isAsyncEncryptionAvailable(),
   dataDir: dataRoot,

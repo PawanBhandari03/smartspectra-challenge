@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('gutCheck', {
   readSample: () => ipcRenderer.invoke('sample:read'),
   setChoice: (name, choice) => ipcRenderer.invoke('session:setChoice', name, choice),
   deleteSession: (name) => ipcRenderer.invoke('session:delete', name),
+  card: {
+    save: (dataUrl, name) => ipcRenderer.invoke('card:save', dataUrl, name),
+  },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
     saveKey: (key) => ipcRenderer.invoke('settings:saveKey', key),
