@@ -823,6 +823,10 @@ function renderChoice(result, sessionName) {
 function renderResults(result, sessionName, recordingName, { sample = false } = {}) {
   const a = analyzeSession(result);
   $('sampleBanner').classList.toggle('hidden', !sample);
+  // The sample isn't in My decisions, so its back arrow returns home instead.
+  $('resultsBack').dataset.go = sample ? 'welcome' : 'history';
+  $('resultsBack').title = sample ? 'Back' : 'Back to my decisions';
+  $('resultsBack').setAttribute('aria-label', $('resultsBack').title);
   renderChoice(result, sample ? null : sessionName);
   console.log(`Session done (completed=${result.completed}): verdict ${JSON.stringify(a.verdict)} · visits `
     + a.visits.map((v) => `${v.label}#${v.visit} pulse ${fmt(v.stats.pulse, 1)} (n${v.stats.pulseReadings})`).join(' · ')
