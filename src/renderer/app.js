@@ -935,6 +935,12 @@ $('newSession').onclick = () => {
 
 // ---------- History ----------
 
+// Session file names carry their start time, e.g. gutcheck-2026-11-12T03-25-50-740Z.json.
+function sessionWhen(name) {
+  const m = name.match(/(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/);
+  return m ? new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`) : null;
+}
+
 function sessionDate(name) {
   const m = name.match(/(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/);
   if (!m) return name;
@@ -951,52 +957,43 @@ async function renderHistory() {
     try { session = JSON.parse(await window.gutCheck.readSession(name)); } catch { continue; }
     if (!session.options || session.options.length < 2) continue;
     const a = analyzeSession(session);
-
-    const item = document.createElement('div');
-    item.className = 'history-item';
-    item.tabIndex = 0;
-    const left = document.createElement('div');
-    const title = document.createElement('div');
-    title.className = 'title';
-    const first = document.createElement('span');
-    first.textContent = session.options[0].label;
-    const vs = document.createElement('span');
-    vs.className = 'vs';
-    vs.textContent = 'or';
-    const second = document.createElement('span');
-    second.textContent = session.options[1].label;
-    const group = (i, label) => {
-      const g = document.createElement('span');
-      g.className = 'opt-group';
-      g.append(swatch(OPTION_COLORS[i]), label);
-      return g;
+    const div = (cls, text) => {
+      const d = document.createElement('div');
+      d.className = cls;
+      if (text != null) d.textContent = text;
+      return d;
     };
-    title.append(group(0, first), vs, group(1, second));
-    if (session.demo) {
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = 'Demo';
-      title.appendChild(chip);
-    }
-    if ((session.version || 1) < 2) {
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = 'Early format';
-      title.appendChild(chip);
-    }
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = sessionDate(name);
-    left.append(title, meta);
-    if (session.choice) {
-      const chose = document.createElement('div');
-      chose.className = 'chose';
-      chose.textContent = `You chose: ${choiceLabel(session)}`;
-      left.appendChild(chose);
-    }
-    const verdict = document.createElement('div');
-    verdict.className = 'verdict';
-    verdict.textContent = verdictText(a.verdict).title;
+
+    const item = div('history-item');
+    item.tabIndex = 0;
+
+    // Left margin: the date, like an entry in a journal.
+    const when = sessionWhen(name);
+    const date = div('h-date');
+    date.append(div('h-day', when ? String(when.getDate()) : '—'),
+      div('h-month', when ? when.toLocaleDateString([], { month: 'short', year: 'numeric' }) : ''),
+      div('h-time', when ? when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''));
+
+    // Middle: the two options, one per line, then what the body did and what you chose.
+    const body = div('h-body');
+    const calmer = a.verdict.kind === 'lean' ? a.verdict.calmerIndex : null;
+    session.options.slice(0, 2).forEach((o, i) => {
+      const line = div('h-option');
+      const label = document.createElement('span');
+      label.textContent = o.label;
+      line.append(swatch(OPTION_COLORS[i]), label);
+      if (calmer === i) line.appendChild(div('h-tag', 'calmer'));
+      body.appendChild(line);
+    });
+    const foot = div('h-foot');
+    foot.appendChild(div('h-verdict', verdictText(a.verdict).title));
+    if (session.choice) foot.appendChild(div('h-chose', `You chose ${choiceLabel(session)}`));
+    if (session.demo) foot.appendChild(div('chip', 'Demo'));
+    if ((session.version || 1) < 2) foot.appendChild(div('chip', 'Early format'));
+    body.appendChild(foot);
+
+    // Right: delete (always visible) and an open cue.
+    const actions = div('h-actions');
     const del = document.createElement('button');
     del.className = 'delete';
     del.textContent = 'Delete';
@@ -1006,8 +1003,11 @@ async function renderHistory() {
       if (!confirm(`Delete "${session.options[0].label}" or "${session.options[1].label}" from ${sessionDate(name)}? This cannot be undone.`)) return;
       await window.gutCheck.deleteSession(name);
       item.remove();
+      updateHistoryCount();
     };
-    item.append(left, verdict, del);
+    actions.append(del, div('h-open', '→'));
+
+    item.append(date, body, actions);
     const open = () => {
       renderResults(session, name, session.recording);
       go('results');
@@ -1022,6 +1022,12 @@ async function renderHistory() {
     empty.textContent = 'No sessions yet. Start a check to see it here.';
     list.appendChild(empty);
   }
+  updateHistoryCount();
+}
+
+function updateHistoryCount() {
+  const n = document.querySelectorAll('#historyList .history-item').length;
+  $('historyCount').textContent = n ? ` · ${n} ${n === 1 ? 'entry' : 'entries'}` : '';
 }
 
 // ---------- Start ----------
