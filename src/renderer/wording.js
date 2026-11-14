@@ -2,7 +2,24 @@
 
 const fmt = (v, digits = 0) => (v == null ? '—' : v.toFixed(digits));
 
-function verdictText(v) {
+// A tie can still have one big reaction. Single moments can be chance (the tea-vs-coffee control had one),
+// so it is offered as a question, and only when it beats the same 6 bpm bar each round must clear.
+const STANDOUT_BPM = 6;
+
+// The question part of a prompt, without the option name it starts with.
+function questionOf(prompt, label) {
+  const i = prompt.indexOf(label);
+  const rest = i >= 0 ? prompt.slice(i + label.length) : prompt;
+  return rest.replace(/^[\s:.,-]+/, '').trim() || prompt;
+}
+
+function standoutMoment(moments) {
+  const top = moments && moments.rises && moments.rises[0];
+  return top && top.shift >= STANDOUT_BPM ? top : null;
+}
+
+// `moments` (optional, from analyzeSession) lets a tie lead with what did happen.
+function verdictText(v, moments = null) {
   switch (v.kind) {
     case 'lean':
       return {
@@ -10,16 +27,26 @@ function verdictText(v) {
         note: `In both rounds your pulse was lower while imagining "${v.calmerLabel}" (by ${fmt(Math.abs(v.round1), 1)} and ${fmt(Math.abs(v.round2), 1)} bpm), `
           + `both beyond the normal wobble of a resting pulse (${fmt(v.threshold, 1)} bpm). A higher pulse for "${v.tenserLabel}" can mean tension or excitement: which was it?`,
       };
-    case 'tooClose':
+    case 'tooClose': {
+      const why = v.agree
+        ? `Both rounds leaned the same way, but by less than ${fmt(v.threshold, 1)} bpm, which is within the normal wobble of a resting pulse.`
+        : 'The two rounds pointed in opposite directions.';
+      const m = standoutMoment(moments);
+      if (m) {
+        return {
+          title: 'No clear winner, but one moment stood out',
+          note: `Neither option kept you calmer in both rounds, so this choice is less about fear or comfort and more about what you value. ${why} `
+            + `The biggest single jump came while you imagined "${m.label}" and read "${questionOf(m.prompt, m.label)}": your pulse rose about ${fmt(m.shift)} bpm. `
+            + 'One moment can be chance, so treat it as a question, not an answer: what came up for you there?',
+          moment: m,
+        };
+      }
       return {
         title: 'Your body didn\'t pick a side',
         note: 'That is an answer too: neither option made your body clearly calmer or tenser than the other, so this choice '
-          + 'is less about fear or comfort and more about what you value. '
-          + (v.agree
-            ? `Both rounds leaned the same way, but by less than ${fmt(v.threshold, 1)} bpm, which is within the normal wobble of a resting pulse.`
-            : 'The two rounds pointed in opposite directions.')
-          + ' The moments below show where your body did react.',
+          + `is less about fear or comfort and more about what you value. ${why} The moments below show where your body did react.`,
       };
+    }
     case 'notEnough':
       return { title: 'Not enough clear signal', note: 'At least one visit had too few reliable pulse readings. Better light on your face and staying still usually fix this.' };
     default:
@@ -50,4 +77,4 @@ function sessionWhen(name) {
   return m ? new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`) : null;
 }
 
-module.exports = { verdictText, choiceComparison, clockText, sessionWhen };
+module.exports = { verdictText, questionOf, STANDOUT_BPM, choiceComparison, clockText, sessionWhen };

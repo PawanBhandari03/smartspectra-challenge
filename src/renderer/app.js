@@ -827,7 +827,7 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
     + a.visits.map((v) => `${v.label}#${v.visit} pulse ${fmt(v.stats.pulse, 1)} (n${v.stats.pulseReadings})`).join(' · ')
     + ` · saved ${sessionName}`);
 
-  const text = verdictText(a.verdict);
+  const text = verdictText(a.verdict, a.moments);
   renderReveal(a, result.options);
   currentCard = {
     options: result.options,
@@ -1230,7 +1230,7 @@ async function renderHistory() {
       body.appendChild(line);
     });
     const foot = div('h-foot');
-    foot.appendChild(div('h-verdict', verdictText(a.verdict).title));
+    foot.appendChild(div('h-verdict', verdictText(a.verdict, a.moments).title));
     if (session.demo) foot.appendChild(div('chip', 'Demo'));
     if ((session.version || 1) < 2) foot.appendChild(div('chip', 'Early format'));
     body.appendChild(foot);

@@ -34,6 +34,8 @@ Checks that need a real camera, a real API key or the installed app, with the da
 | Nov 12 | phone, daylight | beach vs speech (A B B A) | calmer with the beach ✓ (bundled as the sample) |
 | Nov 12 | installed app | 30 s Signal Lab | recording saved to the app data folder ✓ |
 | Nov 12 (5:45 PM) | installed CrossRoads 1.0.0 | beach vs speech again (A B B A) | excellent signal (98% stable, confidence 83); didn't pick a side (rounds disagreed: +2.1, −7.5 bpm); session, recording and choice saved ✓ |
+| Nov 14 | phone, daylight (dev build) | city vs Bangalore again (A B B A) | 79% stable, 30 fps; rounds −0.3 / +0.3 bpm → didn't pick a side; decision saved, Save as image ✓ |
+| Nov 14 | phone, daylight (dev build) | master's abroad vs start working (A B B A) | 92% stable; rounds +2.1 / −8.0 → no clear winner; biggest jump +8.4 bpm at "what did you give up for it?" (led to the tie wording change) |
 
 ## How to run the installer scan
 

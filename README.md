@@ -169,13 +169,13 @@ npm start
 | Command | What it does |
 |---|---|
 | `npm start` | Bundle the UI (esbuild) and launch the app |
-| `npm test` | 44 automated tests (verdict rules, filters, session plan, SDK decoding, replay, result wording, requested metrics, private camera names) |
+| `npm test` | 47 automated tests (verdict rules, filters, session plan, SDK decoding, replay, result wording, requested metrics, private camera names) |
 | `npm run analyze` | Print the full analysis of the bundled sample (or `npm run analyze -- path/to/session.json`) |
 | `npm run dist` | Build the Windows installer and portable exe into `release/` |
 
 ## Tests
 
-`npm test` runs 44 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, the session plan must always be A B B A or B A A B, result wording must never call a choice wrong, and the SDK must only be asked for the seven measurements listed in the privacy notes. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
+`npm test` runs 47 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, the session plan must always be A B B A or B A A B, result wording must never call a choice wrong, and the SDK must only be asked for the seven measurements listed in the privacy notes. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
 
 ## Troubleshooting
 
@@ -192,7 +192,7 @@ npm start
 ## Limitations
 
 - **One person, four validation sessions.** Not a study. The positive control was found once and not on the repeat.
-- **Pulse wobbles 6–9 bpm minute to minute**, so most real decisions will honestly show "didn't pick a side". That is the point of a mirror.
+- **Pulse wobbles 6–9 bpm minute to minute**, so most real decisions will honestly show no clear winner. That is the point of a mirror. When one prompt still made your pulse jump by 6 bpm or more, the result leads with it, as a question rather than proof (single moments can be chance).
 - **The SDK's pulse is a ~12 s rolling average**; moments are reflection cues, not second-by-second measurements.
 - **A higher pulse isn't "worse"**: excitement and fear both raise it. The app asks; it never decides.
 - **Lighting matters**: dim light lowers frame rate and skews expressions.

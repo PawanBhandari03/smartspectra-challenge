@@ -46,3 +46,27 @@ test('clock times are minutes and seconds', () => {
   assert.equal(clockText(65400), '1:05');
   assert.equal(clockText(-5), '0:00');
 });
+
+test('a tie leads with its biggest pulse jump, offered as a question, not proof', () => {
+  const { STANDOUT_BPM } = require('../src/renderer/wording');
+  const rise = { label: 'Start working', prompt: 'Start working: what did you give up for it?', shift: 8.4 };
+  const t = verdictText({ kind: 'tooClose', agree: false, threshold: 6 }, { rises: [rise] });
+  assert.match(t.title, /No clear winner, but one moment stood out/);
+  assert.match(t.note, /"what did you give up for it\?"/);
+  assert.match(t.note, /about 8 bpm/);
+  assert.match(t.note, /can be chance/);
+  // A smaller jump is not promoted to the headline.
+  const small = verdictText({ kind: 'tooClose', agree: true, threshold: 6 }, { rises: [{ ...rise, shift: STANDOUT_BPM - 0.5 }] });
+  assert.match(small.title, /didn't pick a side/);
+});
+
+test('a moment never changes a clear lean', () => {
+  const t = verdictText(lean, { rises: [{ label: 'The speech', prompt: 'The speech: go on stage.', shift: 20 }] });
+  assert.match(t.title, /calmer with "The beach"/);
+});
+
+test('the question is read without the option name in front', () => {
+  const { questionOf } = require('../src/renderer/wording');
+  assert.equal(questionOf('Back to: Stay home. It\'s a year later. What did you gain?', 'Stay home'), 'It\'s a year later. What did you gain?');
+  assert.equal(questionOf('No name here?', 'Stay home'), 'No name here?');
+});
