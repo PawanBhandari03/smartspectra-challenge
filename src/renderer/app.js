@@ -61,12 +61,20 @@ function go(name) {
   });
   $('appBar').classList.remove('tucked');
   window.scrollTo(0, 0);
+  if (name === 'options' || name === 'setup') refreshKeyNotice();
   if (name === 'setup') return enterSetup();
   closeCamera();
   if (name === 'options') renderOptions();
   if (name === 'history') return renderHistory();
   if (name === 'settings') return renderSettings();
   return Promise.resolve();
+}
+
+// A live check needs a Presage key. Say so up front instead of after the camera check.
+async function refreshKeyNotice() {
+  let hasKey = true;
+  try { hasKey = (await window.gutCheck.settings.get()).keySource !== 'none'; } catch { /* leave the notice hidden */ }
+  document.querySelectorAll('.key-notice').forEach((n) => n.classList.toggle('hidden', hasKey));
 }
 
 // ---------- Settings ----------
@@ -713,6 +721,7 @@ async function openSample() {
 }
 
 $('trySample').onclick = openSample;
+document.querySelectorAll('.sample-link').forEach((b) => { b.onclick = openSample; });
 
 const SAMPLE_REPLAY_SPEED = 5;
 

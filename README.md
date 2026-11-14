@@ -58,7 +58,7 @@ The sample is a real recording (numbers only, camera name removed). It replays o
 
 Download from [Releases](https://github.com/PawanBhandari03/smartspectra-challenge/releases/latest). The app is not code-signed, so Windows SmartScreen shows *"Windows protected your PC"*: click **More info → Run anyway**.
 
-For live measurement you need a free Presage API key from [physiology.presagetech.com](https://physiology.presagetech.com): paste it in **Settings** (stored encrypted on your computer). The sample works without one.
+For live measurement you need a free Presage API key from [physiology.presagetech.com](https://physiology.presagetech.com): paste it in **Settings** (stored encrypted on your computer). The sample works without one, and the app tells you up front (with an **Open Settings** button) if a live check needs a key.
 
 ## How it works
 
