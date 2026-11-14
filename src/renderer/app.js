@@ -832,6 +832,7 @@ function renderResults(result, sessionName, recordingName, { sample = false } = 
   currentCard = {
     options: result.options,
     verdict: a.verdict,
+    result, // read at draw time, so a decision saved after the result appears still shows on the card
     date: new Date(result.createdAt || Date.now()).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' }),
   };
   $('resultsTitle').textContent = text.title;
@@ -911,7 +912,7 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-async function drawDecisionCard({ options, verdict, date }) {
+async function drawDecisionCard({ options, verdict, date, result }) {
   await Promise.all(['500 40px Newsreader', 'italic 400 28px Newsreader'].map((f) => document.fonts.load(f).catch(() => null)));
   const W = 1200;
   const H = 675;
@@ -942,7 +943,24 @@ async function drawDecisionCard({ options, verdict, date }) {
   const title = verdictText(verdict).title;
   ctx.fillStyle = C.ink;
   ctx.font = `500 50px ${serif}`;
-  wrapText(ctx, title, W - 128).slice(0, 2).forEach((l, i) => ctx.fillText(l, 64, 176 + i * 60));
+  const titleLines = wrapText(ctx, title, W - 128).slice(0, 2);
+  titleLines.forEach((l, i) => ctx.fillText(l, 64, 176 + i * 60));
+
+  // What the person decided, if they saved a decision for this check.
+  const chosen = result && result.choice && result.choice.optionIndex != null ? result.choice.optionIndex : null;
+  if (chosen != null && options[chosen]) {
+    const y = 176 + (titleLines.length - 1) * 60 + 58;
+    ctx.fillStyle = C.muted;
+    ctx.font = `italic 28px ${serif}`;
+    ctx.fillText('I chose', 64, y);
+    const x = 64 + ctx.measureText('I chose').width + 22;
+    ctx.fillStyle = chosen === 0 ? C.a : C.b;
+    ctx.beginPath(); ctx.arc(x + 8, y - 9, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.ink;
+    ctx.font = `500 32px ${serif}`;
+    const nameLines = wrapText(ctx, options[chosen].label, W - 64 - (x + 28) - 64);
+    ctx.fillText(nameLines.length > 1 ? `${nameLines[0]}…` : nameLines[0], x + 28, y);
+  }
 
   // The crossroads
   const weight = (i) => (verdict.kind === 'lean' ? (verdict.calmerIndex === i ? 'strong' : 'faint') : verdict.kind === 'tooClose' ? 'even' : 'faint');
@@ -973,7 +991,7 @@ async function drawDecisionCard({ options, verdict, date }) {
     if (w === 'strong') {
       ctx.fillStyle = C.accent;
       ctx.font = `600 20px ${'Segoe UI, sans-serif'}`;
-      ctx.fillText('CALMER', 640, y0 + dy + 11 + (lines.length > 1 ? 40 : 40));
+      ctx.fillText('CALMER', 640, y0 + dy + 11 + (lines.length > 1 ? 50 : 42));
     }
     ctx.globalAlpha = 1;
   });
@@ -1312,6 +1330,14 @@ function updateHistoryCount() {
     location.href = 'lab.html';
   } else if (auto === 'screen:sample') {
     await openSample();
+  } else if (auto.startsWith('card:')) {
+    // Dev hook: show the "Save as image" card full-window so it can be screenshotted.
+    const name = auto.slice(5);
+    renderResults(JSON.parse(await window.gutCheck.readSession(name)), name, null);
+    const img = document.createElement('img');
+    img.src = await drawDecisionCard(currentCard);
+    for (const [k, v] of Object.entries({ position: 'fixed', inset: '0', width: '100%', height: '100%', 'object-fit': 'contain', 'z-index': '9999', background: '#fff' })) img.style.setProperty(k, v);
+    document.body.appendChild(img);
   } else if (auto.startsWith('open:')) {
     const name = auto.slice(5);
     renderResults(JSON.parse(await window.gutCheck.readSession(name)), name, null);

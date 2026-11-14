@@ -131,7 +131,7 @@ Main process (SDK, camera, storage, encrypted key) · context-isolated preload b
 - **SDK network use:** according to Presage, the SDK contacts their servers to check the API key and credits. SDK telemetry is switched off. We have not measured the SDK's traffic ourselves.
 - **Only what it needs:** CrossRoads asks the SDK for seven measurements (breathing, pulse, HRV, blinks, expressions) and nothing else; a test fails if that list grows.
 - **Camera names stay private.** Windows names phone cameras after their owner; CrossRoads shows and logs them without the name.
-- **Save as image** writes a picture only where you choose, and the card carries no pulse numbers.
+- **Save as image** writes a picture only where you choose, and the card carries no pulse numbers. If you saved a decision, it adds a line "I chose: …".
 - **Delete any time:** one session in My decisions, or everything in Settings → *Delete all my data*. The API key can be removed in Settings.
 - **Not medical.** A general wellness reflection tool; no diagnosis, no treatment, no medical decisions. For reflecting on your own decisions only, never for measuring other people.
 

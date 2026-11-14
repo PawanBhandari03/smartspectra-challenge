@@ -19,7 +19,7 @@ CrossRoads reads signals from a camera, so this page says exactly what happens w
 | Your two options and an optional note about what you decided | Saved in the session file on this computer. |
 | Presage API key | `.env` file (development) or encrypted with Windows `safeStorage` (installed app). Never in the repository. |
 
-| Shared result card ("Save as image") | Saved only where you choose. Shows the two options, the answer and the date, never pulse numbers. |
+| Shared result card ("Save as image") | Saved only where you choose. Shows the two options, the answer, the date and (if you saved one) the option you chose, never pulse numbers. |
 | Preferences (theme, Hide me, focus mode, last camera) | The app's local browser storage on this computer. |
 
 Windows often names phone cameras after their owner ("Name's Phone"). CrossRoads shows, logs and saves camera names without that part.

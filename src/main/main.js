@@ -333,11 +333,19 @@ function createWindow() {
   const shotsDir = app.isPackaged ? null : process.env.GUTCHECK_SHOTS;
   if (shotsDir) {
     fs.mkdirSync(shotsDir, { recursive: true });
+    // GUTCHECK_THEME=dark|light forces the colour theme for the screenshots (never in the packaged app).
+    if (process.env.GUTCHECK_THEME) {
+      win.webContents.on('dom-ready', () => win.webContents.executeJavaScript(`document.documentElement.dataset.theme = ${JSON.stringify(process.env.GUTCHECK_THEME)}`));
+    }
     let n = 0;
     const timer = setInterval(async () => {
       if (win.isDestroyed()) return clearInterval(timer);
       try {
         const positions = ['0', '(document.body.scrollHeight - innerHeight) / 2', 'document.body.scrollHeight'];
+        // GUTCHECK_SCROLLTO=<css selector> keeps every shot on that section instead of cycling.
+        if (process.env.GUTCHECK_SCROLLTO) {
+          positions.fill(`document.querySelector(${JSON.stringify(process.env.GUTCHECK_SCROLLTO)}).getBoundingClientRect().top + scrollY - 100`);
+        }
         await win.webContents.executeJavaScript(`window.scrollTo(0, ${positions[n % 3]})`);
         const img = await win.webContents.capturePage();
         fs.writeFileSync(path.join(shotsDir, `shot-${String(n++).padStart(3, '0')}.png`), img.toPNG());
