@@ -46,6 +46,7 @@ Legend: `[ ]` to do · `[x]` done · 👤 = needs **you (Pawan)** · 💳 = spen
 - [x] Control experiment (tea vs coffee) + real decision → single visits can't tell options apart (see OVERVIEW)
 - [x] Redesign: 2 options × 2 visits in mirrored order (A B B A), ~4 min, faster option-specific prompts
 - [x] Pulse-only comparison: median of stable, confident readings; quality check per visit
+- [x] Final build packaged and scanned for keys (Nov 14); README screenshots retaken (Nov 14)
 - [x] Verdict calibrated on real data: names a calmer option only if both rounds agree by > max(wobble, 6 bpm); otherwise "Your body didn't pick a side"
 - [x] Decision with Pawan: **a mirror, not a verdict**
 - [x] Results screen: option cards, pulse timeline (hover shows the prompt on screen), "moments your body reacted", reflection questions, method + limits

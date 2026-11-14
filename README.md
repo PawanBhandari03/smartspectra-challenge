@@ -30,8 +30,8 @@
 > **TL;DR** · Stuck between two options? CrossRoads guides you through short scenes for each option, **twice, in a mirrored order (A B B A)**, while the [Presage SmartSpectra SDK](https://smartspectra.presagetech.com/) reads your pulse from your camera. It then shows a **mirror, not a verdict**: your pulse through the session, the moments your body reacted, and questions to reflect on. It names a "calmer" option **only when both rounds agree beyond normal pulse wobble**. We tested that rule against ourselves: a tea-vs-coffee control (it correctly said nothing) and a beach-vs-speech positive control (it found the calm option once, and on an identical repeat it honestly said it could not tell). Everything runs on your computer; video is never saved.
 
 <p align="center">
-  <img src="docs/images/05-results-verdict.png" width="900" alt="CrossRoads results screen for the bundled sample session">
-  <br><sub>The bundled sample session (recorded by the developer): a calm scene vs a stressful scene, each imagined twice.</sub>
+  <img src="docs/images/05-results-verdict.png" width="900" alt="CrossRoads results screen for a real check">
+  <br><sub>A real check by the developer: the pulse was about 10 bpm lower in both rounds for one option. A mirror, not a verdict.</sub>
 </p>
 
 ## Contents
@@ -76,9 +76,10 @@ Light by default, with a dark "night journal" mode (moon button, or Settings →
 
 | | |
 |---|---|
-| ![Welcome](docs/images/01-welcome.png)<br><sub>Welcome: begin a check, or try the sample without a camera.</sub> | ![Options](docs/images/02-options.png)<br><sub>Two options, each with an optional detail woven into the prompts.</sub> |
-| ![Session](docs/images/04-session.png)<br><sub>During a session: live tiles (pulse with a heart beating at your rate, breathing, blinks, expression), the prompt, progress through the four visits. <em>Sample replay shown.</em></sub> | ![Consent](docs/images/03-consent.png)<br><sub>Consent before any measurement.</sub> |
-| ![Timeline](docs/images/06-results-timeline.png)<br><sub>Pulse through the session; hover any point to see the prompt on screen at that moment. <em>Sample.</em></sub> | ![Moments](docs/images/07-results-moments.png)<br><sub>Moments your body reacted, and questions to sit with. <em>Sample.</em></sub> |
+| ![Welcome](docs/images/01-welcome.png)<br><sub>Welcome: begin a check, or try the sample without a camera.</sub> | ![Options](docs/images/02-options.png)<br><sub>Two options on one page, with the consent beside them.</sub> |
+| ![Session](docs/images/04-session.png)<br><sub>During a session: live tiles, the prompt, and the live pulse line (it takes the colour of the option you are imagining). <em>Sample replay shown.</em></sub> | ![Numbers](docs/images/08-results-numbers.png)<br><sub>By the numbers: each option's average, then every visit with its pulse, breathing, blinks and signal quality.</sub> |
+| ![Timeline](docs/images/06-results-timeline.png)<br><sub>Pulse through the session: reliable readings in black, lower-confidence ones faint, each visit's average in the option's colour. Hover to see the prompt at that moment.</sub> | ![Moments](docs/images/07-results-moments.png)<br><sub>Moments your body reacted, and questions to sit with.</sub> |
+| ![My decisions](docs/images/10-my-decisions.png)<br><sub>My decisions: every check, what you decided, and how it compared with your body. Stored only on your computer.</sub> | ![Dark mode](docs/images/09-dark-mode.png)<br><sub>Night-journal dark mode.</sub> |
 
 ## How it responds to human signals
 
@@ -101,14 +102,17 @@ The first version compared each option once with a calm baseline. Our **tea-vs-c
 
 ![Validation results](docs/images/validation.svg)
 
-| Validation session (Nov 12, daylight) | CrossRoads said |
+| Validation session (daylight) | CrossRoads said |
 |---|---|
 | Control: drink tea vs drink coffee | **Didn't pick a side** ✓ (a looser rule would have said "calmer with tea") |
 | Real decision: stay in my city vs move to Bangalore | **Didn't pick a side** (the two rounds disagreed) |
 | Positive control, run 1: a quiet afternoon at the beach vs giving a speech to 1,000 people with no preparation | **Calmer with the beach** ✓ (−10.0 and −8.1 bpm) |
 | Positive control, run 2: the same two options again, ~8 hours later, better signal | **Didn't pick a side** (the rounds disagreed: speech +2.1, then −7.5 bpm) |
+| Nov 14, final build: stay in my city vs move to Bangalore (again) | **Didn't pick a side** (70.0 vs 70.0 bpm) |
+| Nov 14: do a master's abroad vs start working | **No clear winner**, but one moment stood out (+8.4 bpm at "what did you give up for it?") |
+| Nov 14: tell my parents I want a different career vs keep going with the path they chose | **Calmer with "keep going"** (both rounds beyond 6 bpm; says nothing about which is right) |
 
-The app never invented a winner when the evidence was weak or contradictory, and it found a real reaction once but not on the repeat, so a clear reaction is not guaranteed in a four-minute session. Four sessions from one person are not a study. Full numbers, the calibration and the limits: [docs/VALIDATION.md](docs/VALIDATION.md). Check the sample yourself with `npm run analyze`.
+The app never invented a winner when the evidence was weak or contradictory. Across seven sessions it named a calmer option twice and said "no clear winner" five times, and it found the beach reaction once but not on the repeat, so a clear reaction is not guaranteed in a four-minute session. Seven sessions from one person are not a study. Full numbers, the calibration and the limits: [docs/VALIDATION.md](docs/VALIDATION.md). Check the sample yourself with `npm run analyze`.
 
 <details>
 <summary><strong>How the verdict is decided</strong></summary>
@@ -191,7 +195,7 @@ npm start
 
 ## Limitations
 
-- **One person, four validation sessions.** Not a study. The positive control was found once and not on the repeat.
+- **One person, seven validation sessions.** Not a study. The positive control was found once and not on the repeat.
 - **Pulse wobbles 6–9 bpm minute to minute**, so most real decisions will honestly show no clear winner. That is the point of a mirror. When one prompt still made your pulse jump by 6 bpm or more, the result leads with it, as a question rather than proof (single moments can be chance).
 - **The SDK's pulse is a ~12 s rolling average**; moments are reflection cues, not second-by-second measurements.
 - **A higher pulse isn't "worse"**: excitement and fear both raise it. The app asks; it never decides.

@@ -344,7 +344,10 @@ function createWindow() {
         const positions = ['0', '(document.body.scrollHeight - innerHeight) / 2', 'document.body.scrollHeight'];
         // GUTCHECK_SCROLLTO=<css selector> keeps every shot on that section instead of cycling.
         if (process.env.GUTCHECK_SCROLLTO) {
-          positions.fill(`document.querySelector(${JSON.stringify(process.env.GUTCHECK_SCROLLTO)}).getBoundingClientRect().top + scrollY - 100`);
+          const t = process.env.GUTCHECK_SCROLLTO;
+          // "#id" style selector, or "@<index>" for the n-th results section.
+          const el = t.startsWith('@') ? `document.querySelectorAll('.r-section')[${Number(t.slice(1))}]` : `document.querySelector(${JSON.stringify(t)})`;
+          positions.fill(`${el}.getBoundingClientRect().top + scrollY - 90`);
         }
         await win.webContents.executeJavaScript(`window.scrollTo(0, ${positions[n % 3]})`);
         const img = await win.webContents.capturePage();

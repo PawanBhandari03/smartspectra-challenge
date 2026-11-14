@@ -36,6 +36,9 @@ Checks that need a real camera, a real API key or the installed app, with the da
 | Nov 12 (5:45 PM) | installed CrossRoads 1.0.0 | beach vs speech again (A B B A) | excellent signal (98% stable, confidence 83); didn't pick a side (rounds disagreed: +2.1, −7.5 bpm); session, recording and choice saved ✓ |
 | Nov 14 | phone, daylight (dev build) | city vs Bangalore again (A B B A) | 79% stable, 30 fps; rounds −0.3 / +0.3 bpm → didn't pick a side; decision saved, Save as image ✓ |
 | Nov 14 | phone, daylight (dev build) | master's abroad vs start working (A B B A) | 92% stable; rounds +2.1 / −8.0 → no clear winner; biggest jump +8.4 bpm at "what did you give up for it?" (led to the tie wording change) |
+| Nov 14 | phone, daylight (dev build) | tell my parents vs keep going (A B B A) | 87% stable; rounds +10.7 / +9.4 → calmer with "keep going"; decision saved ✓ |
+| Nov 14 | installer build 1.0.0 | `npm run dist`, then key scan | no key prefix (old or spare) in the installer, the portable exe or the unpacked app; no .env, sessions or recordings inside ✓ |
+| Nov 14 | installed app (Setup exe) | install, spare key in Settings, sample, a real session, Save as image | works ✓ (My decisions starts empty; data lives in %APPDATA%\crossroads) |
 
 ## How to run the installer scan
 
