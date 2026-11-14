@@ -337,6 +337,20 @@ function createWindow() {
     if (process.env.GUTCHECK_THEME) {
       win.webContents.on('dom-ready', () => win.webContents.executeJavaScript(`document.documentElement.dataset.theme = ${JSON.stringify(process.env.GUTCHECK_THEME)}`));
     }
+    // GUTCHECK_CLICKS="<selector>:<wait ms>,..." clicks elements in turn (dev only, for walkthrough screenshots).
+    if (process.env.GUTCHECK_CLICKS) {
+      win.webContents.once('did-finish-load', async () => {
+        for (const step of process.env.GUTCHECK_CLICKS.split(',')) {
+          const [sel, wait] = step.split(':');
+          await new Promise((r) => setTimeout(r, Number(wait) || 1500));
+          // "@fill" types two sample option names into the options page.
+          const js = sel === '@fill'
+            ? `document.querySelectorAll('#optionList input.label').forEach((el, i) => { el.value = ['Stay in my city', 'Move to Bangalore'][i]; el.dispatchEvent(new Event('input')); })`
+            : `document.querySelector(${JSON.stringify(sel)})?.click()`;
+          await win.webContents.executeJavaScript(js).catch(() => null);
+        }
+      });
+    }
     let n = 0;
     const timer = setInterval(async () => {
       if (win.isDestroyed()) return clearInterval(timer);
