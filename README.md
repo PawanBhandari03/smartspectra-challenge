@@ -173,13 +173,13 @@ npm start
 | Command | What it does |
 |---|---|
 | `npm start` | Bundle the UI (esbuild) and launch the app |
-| `npm test` | 47 automated tests (verdict rules, filters, session plan, SDK decoding, replay, result wording, requested metrics, private camera names) |
+| `npm test` | 48 automated tests (verdict rules, filters, session plan, SDK decoding, replay, result wording, requested metrics, private camera names) |
 | `npm run analyze` | Print the full analysis of the bundled sample (or `npm run analyze -- path/to/session.json`) |
 | `npm run dist` | Build the Windows installer and portable exe into `release/` |
 
 ## Tests
 
-`npm test` runs 47 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, the session plan must always be A B B A or B A A B, result wording must never call a choice wrong, and the SDK must only be asked for the seven measurements listed in the privacy notes. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
+`npm test` runs 48 tests with Node's built-in runner, and GitHub Actions runs them on every push. They lock in the validation story: the bundled positive control must say "calmer with the beach", noise-only sessions must say "didn't pick a side", rounds that disagree must not produce a winner, low-confidence and spike readings must be ignored, the session plan must always be A B B A or B A A B, result wording must never call a choice wrong, and the SDK must only be asked for the seven measurements listed in the privacy notes. Manual tests with dates: [docs/MANUAL-TESTS.md](docs/MANUAL-TESTS.md).
 
 ## Troubleshooting
 

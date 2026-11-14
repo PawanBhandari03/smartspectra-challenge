@@ -77,4 +77,19 @@ function sessionWhen(name) {
   return m ? new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`) : null;
 }
 
-module.exports = { verdictText, questionOf, STANDOUT_BPM, choiceComparison, clockText, sessionWhen };
+// What to tell a person when the SDK can't run, in plain words. The raw SDK message stays in the session log.
+// `codeName` is the SDK's error code name (e.g. 'kAuthenticationFailed'); anything unknown keeps the SDK text.
+function friendlySdkError(codeName, message) {
+  switch (codeName) {
+    case 'kAuthenticationFailed':
+      return 'Presage did not accept this API key. Check the key in Settings (top right), or try the sample, which needs no key.';
+    case 'kCreditExhausted':
+      return 'This Presage API key has run out of credits. Check your account at physiology.presagetech.com, or try the sample, which needs no credits.';
+    case 'kNetworkError':
+      return 'CrossRoads could not reach Presage to check the key. Check your internet connection and try again.';
+    default:
+      return `${message || 'Unknown error'}${codeName && codeName !== 'undefined' ? ` (${codeName})` : ''}`;
+  }
+}
+
+module.exports = { friendlySdkError, verdictText, questionOf, STANDOUT_BPM, choiceComparison, clockText, sessionWhen };

@@ -1,5 +1,5 @@
 const { cameraLabel } = require('./camera-name');
-const { verdictText, choiceComparison, clockText, sessionWhen } = require('./wording');
+const { verdictText, choiceComparison, clockText, sessionWhen, friendlySdkError } = require('./wording');
 const { SmartSpectraErrorCode, ProcessingStatus } = require('@smartspectra/node-sdk/renderer');
 const { LiveSource, ReplaySource } = require('../core/sources');
 const { buildPlan, SessionRunner } = require('../core/session');
@@ -584,8 +584,8 @@ async function runSession(source, plan, { speed = 1, demo = false, script = null
   // Errors are only fatal once the SDK actually stops (status kError); some are recoverable.
   let lastError = '';
   source.on('error', (code, message) => {
-    lastError = `${message} (${nameOf(SmartSpectraErrorCode, code)})`;
-    if (!demo) sessionLog(`SDK error: ${lastError}`);
+    lastError = friendlySdkError(nameOf(SmartSpectraErrorCode, code), message);
+    if (!demo) sessionLog(`SDK error: ${message} (${nameOf(SmartSpectraErrorCode, code)})`);
   });
   source.on('processingStatus', (status) => {
     if (!demo) sessionLog(`SDK status: ${nameOf(ProcessingStatus, status)}`);
@@ -635,7 +635,7 @@ async function runSession(source, plan, { speed = 1, demo = false, script = null
   try {
     await source.start();
   } catch (err) {
-    await endWithError(`Couldn't start the measurement: ${err.message}`);
+    await endWithError(`Couldn't start the measurement: ${friendlySdkError(nameOf(SmartSpectraErrorCode, err.code), err.message)}`);
   }
 }
 

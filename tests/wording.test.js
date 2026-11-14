@@ -70,3 +70,13 @@ test('the question is read without the option name in front', () => {
   assert.equal(questionOf('Back to: Stay home. It\'s a year later. What did you gain?', 'Stay home'), 'It\'s a year later. What did you gain?');
   assert.equal(questionOf('No name here?', 'Stay home'), 'No name here?');
 });
+
+test('SDK errors about the key, credits and network are explained in plain words', () => {
+  const { friendlySdkError } = require('../src/renderer/wording');
+  assert.match(friendlySdkError('kAuthenticationFailed', 'SmartSpectra authentication failed.'), /did not accept this API key.*Settings.*sample/);
+  assert.match(friendlySdkError('kCreditExhausted', 'x'), /run out of credits/);
+  assert.match(friendlySdkError('kNetworkError', 'x'), /internet connection/);
+  // Unknown errors keep the SDK's own text and code, so nothing is hidden.
+  assert.equal(friendlySdkError('kConfigurationFailed', 'Bad config'), 'Bad config (kConfigurationFailed)');
+  assert.equal(friendlySdkError('undefined', 'Odd'), 'Odd');
+});

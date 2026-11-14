@@ -206,6 +206,7 @@ smartspectra-challenge/
 | 2026-11-13 | **Tests 26 → 44.** Result wording moved to `wording.js` and tested (ties read as an answer, a choice is never called wrong); replay source, requested-metrics list, B A A B order, v1 sessions, jump filter. Privacy notes now list the seven requested measurements. |
 | 2026-11-14 | Two live sessions (city vs Bangalore, master's vs work) both tied, honestly. The tie screen now leads with the biggest single pulse jump when it clears 6 bpm ("No clear winner, but one moment stood out"), framed as a question because the tea-vs-coffee control also had one. Verdict rule unchanged. Landing step strip removed. 47 tests. |
 | 2026-11-14 | Third live session (telling my parents vs keeping the current path): a clear lean, 87% stable, both rounds ~10 bpm. Save-as-image card gains an "I chose: …" line. Final installers built and scanned (no key). README screenshots retaken from the final UI with real sessions, plus dark mode and My decisions. Seven validation sessions in total. | **GitHub Release v1.0.0 published** (setup and portable exe, sizes verified against the scanned build).
+| 2026-11-14 | Key handling made kinder: a notice at the start of a live check when no Presage key is set (Open Settings / Try the sample), and plain-language messages for a rejected key, used-up credits or no network (raw SDK text stays in the session log). Wrong key tested against the real server. 48 tests. |
 
 ## How to build the installer
 
