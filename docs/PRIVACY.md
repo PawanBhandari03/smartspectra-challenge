@@ -13,7 +13,7 @@ CrossRoads reads signals from a camera, so this page says exactly what happens w
 
 | Data | Where it goes |
 |---|---|
-| Camera video | Processed by the SmartSpectra SDK **inside the app on this computer**. Never saved, never uploaded by CrossRoads. |
+| Camera video | Read by the SmartSpectra SDK running inside the app. **CrossRoads never saves it and never uploads it.** We have not verified what the SDK itself does with frames. |
 | Preview image | A 320 px copy is shown in the window while measuring; never saved. |
 | Vitals (pulse, breathing, HRV, blinks, expression scores) | Saved as numbers in the session file on this computer. |
 | Your two options and an optional note about what you decided | Saved in the session file on this computer. |
@@ -26,11 +26,11 @@ Windows often names phone cameras after their owner ("Name's Phone"). CrossRoads
 
 ## What leaves the computer
 
-- **According to Presage**, the SDK contacts Presage's servers to check the API key and credits; video frames are processed locally.
+- **When a live session starts, the SDK contacts Presage** to check the API key and credits, authorise the requested measurements, register the device and download its models (these calls appear in the SDK's own log). We found no Presage statement about whether camera frames stay on the device.
 - **SDK telemetry is switched off** (`enableTelemetry: false`).
 - **Only seven measurements are requested** from the SDK: chest and abdomen breathing, breathing rate, pulse, HRV, blinks and expression scores ([`src/core/metrics.js`](../src/core/metrics.js)). Face landmarks, the blood-pressure trace and talking detection are never requested, and an automated test fails if the list grows.
 - CrossRoads itself makes **no other network requests**: no analytics, no AI services, no accounts.
-- We have **not** independently measured the SDK's network traffic; the statement above is Presage's.
+- We have **not** independently measured the SDK's network traffic, so this list is what the SDK's log and Presage's documentation show, not a full audit.
 
 ## Where data is stored
 

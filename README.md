@@ -130,9 +130,9 @@ Main process (SDK, camera, storage, encrypted key) · context-isolated preload b
 ## Consent and data handling
 
 - **Consent first.** Plain-language consent beside the two options, with an explicit tick before any measurement; a REC badge and live preview while measuring; stop any time.
-- **Video never leaves the app.** The SDK processes frames on your computer. CrossRoads saves only your two options, phase timings and numbers (pulse, breathing, blinks, expression scores). Never video.
+- **CrossRoads never saves or uploads your video.** It saves only your two options, phase timings and numbers (pulse, breathing, blinks, expression scores). Never video.
 - **Stored locally only**: `%APPDATA%\crossroads` (installed app). No accounts, no analytics, no AI services, no other network requests by CrossRoads.
-- **SDK network use:** according to Presage, the SDK contacts their servers to check the API key and credits. SDK telemetry is switched off. We have not measured the SDK's traffic ourselves.
+- **SDK network use:** when a live session starts, the SDK contacts Presage to check the API key and credits, authorise the requested measurements, register the device and download its models (we saw these calls in the SDK's own log). SDK telemetry is switched off. We have not measured the SDK's network traffic ourselves, and we found no Presage statement about whether camera frames stay on the device.
 - **Only what it needs:** CrossRoads asks the SDK for seven measurements (breathing, pulse, HRV, blinks, expressions) and nothing else; a test fails if that list grows.
 - **Camera names stay private.** Windows names phone cameras after their owner; CrossRoads shows and logs them without the name.
 - **Save as image** writes a picture only where you choose, and the card carries no pulse numbers. If you saved a decision, it adds a line "I chose: …".

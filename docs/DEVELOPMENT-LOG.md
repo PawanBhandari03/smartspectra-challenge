@@ -183,7 +183,7 @@ smartspectra-challenge/
 
 - No video is ever saved or uploaded; only numbers.
 - Sessions stay on the user's laptop.
-- The SDK contacts Presage only to check the API key / credits.
+- When a live session starts, the SDK contacts Presage (key and credits, measurement authorisation, device registration, model download); this was corrected on Nov 15 after a wrong-key test showed more calls than first documented.
 - SDK telemetry is turned off (`enableTelemetry: false`).
 
 ## 10. Log of what's been done
