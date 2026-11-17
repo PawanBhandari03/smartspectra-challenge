@@ -285,9 +285,12 @@ ipcMain.handle('gutcheck:getAutoReplay', () => (app.isPackaged ? '' : process.en
 // ---------- Window ----------
 
 function createWindow() {
+  // GUTCHECK_SIZE=<w>x<h> sets the page size for video capture (dev only).
+  const devSize = !app.isPackaged && process.env.GUTCHECK_SIZE ? process.env.GUTCHECK_SIZE.split('x').map(Number) : null;
   win = new BrowserWindow({
-    width: 1280,
-    height: 860,
+    width: devSize ? devSize[0] : 1280,
+    height: devSize ? devSize[1] : 860,
+    useContentSize: !!devSize,
     backgroundColor: '#f4efe6',
     icon: path.join(appRoot, 'assets/icon.png'),
     title: 'CrossRoads',
@@ -327,6 +330,24 @@ function createWindow() {
   });
 
   win.loadFile(path.join(appRoot, 'src/renderer/index.html'));
+
+  // Dev/testing hook: GUTCHECK_FRAMES=<folder> saves about 10 frames a second, named by elapsed
+  // milliseconds, so a screen can be turned into a video with exact timing (demo video).
+  const framesDir = app.isPackaged ? null : process.env.GUTCHECK_FRAMES;
+  if (framesDir) {
+    fs.mkdirSync(framesDir, { recursive: true });
+    const t0 = Date.now();
+    (async () => {
+      while (!win.isDestroyed()) {
+        const started = Date.now();
+        try {
+          const img = await win.webContents.capturePage();
+          fs.writeFileSync(path.join(framesDir, `f-${String(started - t0).padStart(7, '0')}.jpg`), img.toJPEG(90));
+        } catch { /* minimised or closing */ }
+        await new Promise((r) => setTimeout(r, Math.max(0, 100 - (Date.now() - started))));
+      }
+    })();
+  }
 
   // Dev/testing hook: GUTCHECK_SHOTS=<folder> saves a screenshot of the window every 2 s,
   // cycling between the top, middle and bottom of long pages.

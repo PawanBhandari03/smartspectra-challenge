@@ -1339,6 +1339,13 @@ function updateHistoryCount() {
     location.href = 'lab.html';
   } else if (auto === 'screen:sample') {
     await openSample();
+  } else if (auto.startsWith('session-replay:')) {
+    // Dev hook: replay a saved session at 1x with its own recorded phase timing (for the demo video).
+    const name = auto.slice('session-replay:'.length);
+    const session = JSON.parse(await window.gutCheck.readSession(name));
+    const plan = buildPlan(session.options, { timing: session.timing, order: session.order });
+    const source = new ReplaySource(await window.gutCheck.readRecording(session.recording), { speed: 1 });
+    await runSession(source, plan, { speed: 1, demo: true, script: session.phases, intro: `Replay of ${name}` });
   } else if (auto.startsWith('card:')) {
     // Dev hook: show the "Save as image" card full-window so it can be screenshotted.
     const name = auto.slice(5);
