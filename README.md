@@ -52,8 +52,8 @@ The sample is a real recording (numbers only, camera name removed). It replays o
 
 | System | File | Status |
 |---|---|---|
-| Windows 10/11 x64 | `CrossRoads-Setup-<version>.exe` (installer) | ✅ Built and tested installed |
-| Windows 10/11 x64 | `CrossRoads-Portable-<version>.exe` (no install) | ✅ Built |
+| Windows 10/11 x64 | `CrossRoads-Setup-1.0.0.exe` (installer) | ✅ Built and tested installed |
+| Windows 10/11 x64 | `CrossRoads-Portable-1.0.0.exe` (no install) | ✅ Built |
 | macOS / Linux | — | ❌ Not built (the SDK supports them; [run from source](#run-from-source) is untested there) |
 
 Download from [Releases](https://github.com/PawanBhandari03/smartspectra-challenge/releases/latest). The app is not code-signed, so Windows SmartScreen shows *"Windows protected your PC"*: click **More info → Run anyway**.
